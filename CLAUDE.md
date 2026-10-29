@@ -8,7 +8,15 @@ Spécifications et coûts : `docs/CAHIER_DES_CHARGES.md`.
 
 - API : NestJS 12 + Prisma 7 + PostgreSQL (dossier `/api`), modules ES (imports locaux suffixés `.js`), lint oxlint, tests Vitest (`*.spec.ts`). Routes sous `/api`, documentation OpenAPI sur `/api/docs` (hors production).
 - Site : Next.js 16 (App Router) + Tailwind (dossier `/web`), port 3002. Lire `web/node_modules/next/dist/docs/` avant d'écrire du code (`proxy.ts` au lieu de middleware, `params`/`searchParams` asynchrones, `refresh()` dans les Server Actions).
+- Extension Chrome/Edge Manifest V3 (dossier `/extension`, TypeScript + esbuild, `pnpm --filter @visa/extension build` → `dist/`) : voir `extension/README.md`.
 - Monorepo pnpm ; Prettier commun (guillemets simples) ; base de développement : `docker compose` sur le port 5436.
+
+## Extension et sites officiels
+
+- Aucun champ de site n'est écrit en dur : l'extension **relève** les champs de la page (`moteur/element.ts` pour Vue 2 + Element UI via `__vue__`, `moteur/natif.ts` pour le HTML simple), l'API les stocke (`ChampSite`, module `api/src/sites`) avec une correspondance (`CHAMP`, `FIXE`, `IGNORER`, `A_DEFINIR`) proposée par `sites/proposition.ts`. `remplir` vaut `obligatoire` au premier relevé.
+- Le plan de remplissage est calculé hors de la page par `extension/src/commun/valeurs.ts` (`planifier`, `decider`, `choisirOption`) ; jamais d'écrasement d'un champ déjà rempli, jamais de clic sur « Suivant »/« Soumettre ».
+- Le script de page (monde MAIN) ne parle qu'au pont par `postMessage` ; les jetons restent dans `chrome.storage.session`.
+- Tests du moteur sur un formulaire **fictif** (`extension/essai/formulaire.js`, vrais Vue 2 + Element UI sous jsdom) ; ne jamais reproduire le site officiel.
 
 ## Règles du domaine
 

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Formulaire d'essai (fictif)</title>
+    <link rel="stylesheet" href="/element.css" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 760px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+      .bandeau {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="bandeau">
+      Page d'essai FICTIVE de l'extension (Vue 2 + Element UI, comme COVA). Elle
+      ne reproduit pas le site officiel et n'envoie rien.
+    </p>
+    <div id="app"></div>
+    <script src="/vue.js"></script>
+    <script src="/element.js"></script>
+    <script type="module">
+      import { definition } from '/formulaire.js';
+      window.vueEssai = new Vue(definition).$mount('#app');
+    </script>
+    <!-- Moteur de l'extension, tel qu'injecté sur le site officiel. -->
+    <script src="/page.js"></script>
+  </body>
+</html>

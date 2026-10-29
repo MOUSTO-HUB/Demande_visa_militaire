@@ -312,3 +312,33 @@ export const tailleFr = (octets: number) =>
   octets < 1024 * 1024
     ? `${Math.round(octets / 1024)} Ko`
     : `${(octets / 1024 / 1024).toFixed(1).replace('.', ',')} Mo`;
+
+// --- Sites officiels (extension) ---
+
+export type ModeCorrespondance = 'A_DEFINIR' | 'CHAMP' | 'FIXE' | 'IGNORER';
+
+export interface ChampSite {
+  id: string;
+  pays: PaysAccueil;
+  page: string;
+  cle: string;
+  libelle: string;
+  type: string;
+  obligatoire: boolean;
+  options: { valeur: string; libelle: string }[];
+  formatDate: string | null;
+  mode: ModeCorrespondance;
+  champId: string | null;
+  valeurFixe: string | null;
+  conversions: Record<string, string>;
+  remplir: boolean;
+  propose: boolean;
+  dernierReleve: string;
+}
+
+export const LIBELLES_MODE: Record<ModeCorrespondance, string> = {
+  A_DEFINIR: 'À définir',
+  CHAMP: 'Réponse du dossier',
+  FIXE: 'Valeur fixe',
+  IGNORER: 'Ignorer',
+};

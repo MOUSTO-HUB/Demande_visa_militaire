@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Visa DGRECM</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <strong>Visa DGRECM</strong>
+      <span id="utilisateur"></span>
+      <button
+        type="button"
+        id="bouton-parametres"
+        class="lien"
+        title="Paramètres"
+      >
+        ⚙
+      </button>
+    </header>
+
+    <div id="alerte" class="alerte" hidden></div>
+
+    <!-- Paramètres : adresse de la plateforme -->
+    <section id="vue-parametres" hidden>
+      <form id="form-parametres">
+        <label
+          >Adresse de l'API de la plateforme
+          <input
+            name="api"
+            type="url"
+            required
+            placeholder="https://visa.dgsic.gov.gn/api"
+          />
+        </label>
+        <button type="submit">Enregistrer</button>
+        <button type="button" class="secondaire" id="fermer-parametres">
+          Fermer
+        </button>
+      </form>
+    </section>
+
+    <!-- Connexion : mêmes identifiants que sur la plateforme -->
+    <section id="vue-connexion" hidden>
+      <form id="form-connexion">
+        <label
+          >Email
+          <input name="email" type="email" autocomplete="username" required
+        /></label>
+        <label
+          >Mot de passe
+          <input
+            name="motDePasse"
+            type="password"
+            autocomplete="current-password"
+            required
+        /></label>
+        <button type="submit">Se connecter</button>
+      </form>
+      <form id="form-code" hidden>
+        <p class="aide">
+          Saisissez le code à 6 chiffres de votre application d'authentification
+          (ou un code de secours).
+        </p>
+        <label
+          >Code
+          <input
+            name="code"
+            autocomplete="one-time-code"
+            maxlength="12"
+            required
+        /></label>
+        <button type="submit">Valider</button>
+      </form>
+    </section>
+
+    <!-- Travail sur le site officiel -->
+    <section id="vue-principale" hidden>
+      <p id="site" class="aide"></p>
+
+      <fieldset>
+        <legend>Dossier</legend>
+        <select id="dossier"></select>
+        <form id="form-recherche" class="ligne">
+          <input name="q" placeholder="Matricule ou nom" />
+          <button type="submit" class="secondaire">Chercher</button>
+        </form>
+        <p id="resume-dossier" class="aide"></p>
+      </fieldset>
+
+      <fieldset id="actions-page">
+        <legend>Page affichée</legend>
+        <label class="ligne">
+          <select id="mode">
+            <option value="reglages">
+              Obligatoires + champs cochés dans les réglages
+            </option>
+            <option value="obligatoires">Obligatoires seulement</option>
+          </select>
+        </label>
+        <button type="button" id="remplir">Remplir cette page</button>
+        <button type="button" class="secondaire" id="relever">
+          Relever les champs de cette page
+        </button>
+        <p class="aide">
+          L'extension ne valide jamais le formulaire : vérifiez chaque page,
+          résolvez le captcha et soumettez vous-même.
+        </p>
+      </fieldset>
+
+      <div id="resultat"></div>
+
+      <fieldset id="bloc-soumission" hidden>
+        <legend>Après la soumission</legend>
+        <form id="form-numero" class="ligne">
+          <input
+            name="numero"
+            placeholder="N° de demande du site"
+            required
+            maxlength="60"
+          />
+          <button type="submit">Marquer soumis</button>
+        </form>
+      </fieldset>
+
+      <fieldset>
+        <legend>Pièces à téléverser</legend>
+        <ul id="pieces"></ul>
+      </fieldset>
+
+      <button type="button" class="lien" id="deconnexion">
+        Se déconnecter
+      </button>
+    </section>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

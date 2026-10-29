@@ -10,6 +10,7 @@ import { MrzModule } from './mrz/mrz.module.js';
 import { PiecesModule } from './pieces/pieces.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ReferentielModule } from './referentiel/referentiel.module.js';
+import { SitesModule } from './sites/sites.module.js';
 import { StockageModule } from './stockage/stockage.module.js';
 import { UtilisateursModule } from './utilisateurs/utilisateurs.module.js';
 
@@ -28,6 +29,7 @@ import { UtilisateursModule } from './utilisateurs/utilisateurs.module.js';
     MilitairesModule,
     DossiersModule,
     PiecesModule,
+    SitesModule,
   ],
   controllers: [AppController],
 })

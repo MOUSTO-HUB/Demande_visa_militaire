@@ -66,6 +66,16 @@ enum ActionAudit {
   IMPORT
   STATUT
   SUPPRESSION
+  RELEVE // champs d'un site officiel relevés par l'extension
+  REMPLISSAGE // page d'un site officiel remplie par l'extension
+}
+
+/// D'où vient la valeur saisie dans un champ du site officiel.
+enum ModeCorrespondance {
+  A_DEFINIR // relevé, pas encore relié
+  CHAMP // réponse du dossier (dictionnaire referentiel/champs.ts)
+  FIXE // même valeur pour tous les dossiers
+  IGNORER // jamais rempli par l'extension
 }
 
 // ─── Comptes ─────────────────────────────────────────────────────────────────
@@ -247,4 +257,42 @@ model JournalAudit {
   @@index([creeLe])
   @@index([entite, entiteId])
   @@map("journal_audit")
+}
+
+// ─── Sites officiels ─────────────────────────────────────────────────────────
+
+/// Champ d'un formulaire officiel, relevé par l'extension sur une page du site,
+/// avec sa correspondance vers les réponses des dossiers.
+model ChampSite {
+  id            String             @id @default(uuid(7))
+  pays          PaysAccueil
+  /// Page du formulaire (adresse sans paramètres), ex. « /VISA/apply/personal ».
+  page          String
+  /// Identifiant stable du champ sur la page (propriété du formulaire, sinon libellé).
+  cle           String
+  libelle       String
+  /// texte, liste, date, choix, case, cascade, nombre
+  type          String
+  obligatoire   Boolean
+  /// Choix proposés par le site : [{ valeur, libelle }].
+  options       Json               @default("[]")
+  /// Format attendu par le site pour une date (ex. yyyy-MM-dd).
+  formatDate    String?            @map("format_date")
+  mode          ModeCorrespondance @default(A_DEFINIR)
+  /// Identifiant du champ du dictionnaire (mode CHAMP).
+  champId       String?            @map("champ_id")
+  valeurFixe    String?            @map("valeur_fixe")
+  /// Valeur du dossier → valeur du site, pour les listes : { "MASCULIN": "1" }.
+  conversions   Json               @default("{}")
+  /// Rempli par l'extension (par défaut : les champs obligatoires seulement).
+  remplir       Boolean
+  /// Proposition automatique pas encore confirmée par un gestionnaire.
+  propose       Boolean            @default(false)
+  premierReleve DateTime           @default(now()) @map("premier_releve")
+  dernierReleve DateTime           @default(now()) @map("dernier_releve")
+  modifieLe     DateTime           @updatedAt @map("modifie_le")
+
+  @@unique([pays, page, cle])
+  @@index([pays, page])
+  @@map("champs_site")
 }

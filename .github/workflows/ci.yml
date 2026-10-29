@@ -65,3 +65,6 @@ jobs:
 
       - name: Build site
         run: pnpm --filter @visa/web build
+
+      - name: Build extension
+        run: pnpm --filter @visa/extension build

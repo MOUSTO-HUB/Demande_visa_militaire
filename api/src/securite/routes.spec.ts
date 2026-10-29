@@ -13,6 +13,7 @@ import { MilitairesController } from '../militaires/militaires.controller.js';
 import { MrzController } from '../mrz/mrz.controller.js';
 import { PiecesController } from '../pieces/pieces.controller.js';
 import { ReferentielController } from '../referentiel/referentiel.controller.js';
+import { SitesController } from '../sites/sites.controller.js';
 import { UtilisateursController } from '../utilisateurs/utilisateurs.controller.js';
 
 /**
@@ -46,6 +47,7 @@ const CONTROLEURS = [
   MrzController,
   PiecesController,
   ReferentielController,
+  SitesController,
   UtilisateursController,
 ];
 

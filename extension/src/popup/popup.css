@@ -1,0 +1,157 @@
+:root {
+  color-scheme: light dark;
+  --fond: #ffffff;
+  --texte: #0f172a;
+  --doux: #475569;
+  --bord: #cbd5e1;
+  --marque: #1d4ed8;
+  --vert: #15803d;
+  --rouge: #b91c1c;
+  --fond-alerte: #fef2f2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #0d1322;
+    --texte: #f1f5f9;
+    --doux: #a9b6c8;
+    --bord: #334155;
+    --marque: #60a5fa;
+    --vert: #4ade80;
+    --rouge: #fca5a5;
+    --fond-alerte: #2a0e12;
+  }
+}
+
+body {
+  width: 360px;
+  margin: 0;
+  padding: 12px;
+  font:
+    13px/1.4 system-ui,
+    sans-serif;
+  background: var(--fond);
+  color: var(--texte);
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+header #utilisateur {
+  flex: 1;
+  color: var(--doux);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+form,
+fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+fieldset {
+  border: 1px solid var(--bord);
+  border-radius: 8px;
+  margin: 0 0 10px;
+  padding: 8px 10px 10px;
+}
+
+legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--bord);
+  border-radius: 6px;
+  background: var(--fond);
+  color: var(--texte);
+  min-width: 0;
+}
+
+.ligne {
+  flex-direction: row;
+  gap: 6px;
+}
+
+.ligne input {
+  flex: 1;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--marque);
+  color: #fff;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+button.secondaire {
+  background: transparent;
+  color: var(--marque);
+  border: 1px solid var(--marque);
+}
+
+button.lien {
+  background: none;
+  color: var(--marque);
+  padding: 2px 4px;
+}
+
+.aide {
+  color: var(--doux);
+  font-size: 12px;
+  margin: 0;
+}
+
+.alerte {
+  border: 1px solid var(--rouge);
+  background: var(--fond-alerte);
+  color: var(--rouge);
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+#resultat:not(:empty) {
+  border-left: 3px solid var(--marque);
+  padding: 4px 8px;
+  margin-bottom: 10px;
+}
+
+.ok {
+  color: var(--vert);
+}
+
+.manquant {
+  color: var(--rouge);
+}
+
+ul {
+  margin: 0;
+  padding-left: 18px;
+}

@@ -1,10 +1,12 @@
 packages:
   - api
   - web
+  - extension
 
 allowBuilds:
   '@prisma/engines': true
   '@scarf/scarf': false # télémétrie de swagger-ui
+  core-js: false # message publicitaire (dépendance d'element-ui, essais seulement)
   esbuild: true
   prisma: true
   sharp: false
