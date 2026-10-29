@@ -13,13 +13,26 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { erreurMotDePasse } from '../utilisateurs/utilisateurs.regles.js';
 import type {
   ChargeJeton,
+  DefiDoubleAuth,
   Session,
   UtilisateurConnecte,
 } from './auth.types.js';
-import { apresEchec, messageBlocage } from './connexion.regles.js';
+import {
+  apresEchec,
+  doubleAuthAActiver,
+  messageBlocage,
+} from './connexion.regles.js';
+import { DoubleAuthService } from './double-auth.service.js';
 
 /** Session longue : 12 heures (poste de travail partagé dans un service). */
 export const DUREE_RAFRAICHISSEMENT_MS = 12 * 60 * 60 * 1000;
+
+interface CompteSession {
+  id: string;
+  role: Role;
+  motDePasseProvisoire: boolean;
+  totpSecret: string | null;
+}
 
 const empreinte = (jeton: string) =>
   createHash('sha256').update(jeton).digest('hex');
@@ -34,9 +47,13 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly audit: AuditService,
+    private readonly doubleAuth: DoubleAuthService,
   ) {}
 
-  async connexion(email: string, motDePasse: string): Promise<Session> {
+  async connexion(
+    email: string,
+    motDePasse: string,
+  ): Promise<Session | DefiDoubleAuth> {
     const utilisateur = await this.prisma.utilisateur.findUnique({
       where: { email },
     });
@@ -62,9 +79,35 @@ export class AuthService {
       throw new ForbiddenException(
         'Ce compte est désactivé. Adressez-vous à la DGSIC.',
       );
+    // Double authentification activée : il reste le code de l'application.
+    if (utilisateur.totpSecret) return this.doubleAuth.defi(utilisateur.id);
+    return this.ouvrirSession(utilisateur);
+  }
 
+  /** Étape 2 : code de l'application ou code de secours. */
+  async verifierDoubleAuth(jeton: string, code: string): Promise<Session> {
+    const id = await this.doubleAuth.lireDefi(jeton);
+    const utilisateur = await this.prisma.utilisateur.findUnique({
+      where: { id },
+    });
+    if (!utilisateur?.actif)
+      throw new UnauthorizedException('Session invalide.');
+    const blocage = messageBlocage(utilisateur.bloqueJusquA);
+    if (blocage) throw new ForbiddenException(blocage);
+    if (!(await this.doubleAuth.codeValide(utilisateur, code))) {
+      await this.prisma.utilisateur.update({
+        where: { id },
+        data: apresEchec(utilisateur.echecsConnexion),
+      });
+      throw new UnauthorizedException('Code incorrect.');
+    }
+    return this.ouvrirSession(utilisateur);
+  }
+
+  private async ouvrirSession(utilisateur: CompteSession): Promise<Session> {
     await this.prisma.utilisateur.update({
       where: { id: utilisateur.id },
+      // Connexion réussie : les essais incorrects et les blocages repartent de zéro.
       data: {
         derniereConnexion: new Date(),
         echecsConnexion: 0,
@@ -127,10 +170,16 @@ export class AuthService {
         role: true,
         motDePasseProvisoire: true,
         derniereConnexion: true,
+        totpSecret: true,
       },
     });
     if (!utilisateur) throw new UnauthorizedException();
-    return utilisateur;
+    const { totpSecret, ...profil } = utilisateur;
+    return {
+      ...profil,
+      doubleAuthActive: !!totpSecret,
+      doubleAuthAActiver: doubleAuthAActiver(utilisateur),
+    };
   }
 
   /** Changement de mot de passe (obligatoire après un mot de passe provisoire). */
@@ -166,12 +215,14 @@ export class AuthService {
     );
   }
 
-  private async emettreJetons(utilisateur: {
-    id: string;
-    role: Role;
-    motDePasseProvisoire: boolean;
-  }): Promise<Session> {
-    const charge: ChargeJeton = { sub: utilisateur.id, role: utilisateur.role };
+  private async emettreJetons(utilisateur: CompteSession): Promise<Session> {
+    // Recalculé à chaque renouvellement : l'accès s'ouvre dès l'activation.
+    const aActiver = doubleAuthAActiver(utilisateur);
+    const charge: ChargeJeton = {
+      sub: utilisateur.id,
+      role: utilisateur.role,
+      ...(aActiver ? { aActiver } : {}),
+    };
     const jetonAcces = await this.jwt.signAsync(charge);
     const jetonRafraichissement = randomBytes(32).toString('base64url');
     await this.prisma.jetonRafraichissement.create({
@@ -188,6 +239,7 @@ export class AuthService {
         id: utilisateur.id,
         role: utilisateur.role,
         motDePasseProvisoire: utilisateur.motDePasseProvisoire,
+        doubleAuthAActiver: aActiver,
       },
     };
   }

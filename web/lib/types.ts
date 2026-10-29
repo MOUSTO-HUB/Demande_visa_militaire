@@ -29,6 +29,9 @@ export interface Profil {
   email: string;
   role: Role;
   motDePasseProvisoire: boolean;
+  doubleAuthActive: boolean;
+  /** Rôle qui l'exige, pas encore activée : seul « Mon compte » est ouvert. */
+  doubleAuthAActiver: boolean;
 }
 
 // --- Référentiel ---

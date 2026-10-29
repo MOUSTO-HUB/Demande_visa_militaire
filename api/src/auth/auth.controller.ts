@@ -2,30 +2,56 @@ import { Body, Controller, Get, HttpCode, Ip, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Limiteur } from '../securite/limiteur.js';
 import { AuthService } from './auth.service.js';
-import type { Session, UtilisateurConnecte } from './auth.types.js';
+import type {
+  DefiDoubleAuth,
+  Session,
+  UtilisateurConnecte,
+} from './auth.types.js';
+import { AvantDoubleAuth } from './decorators/avant-double-auth.decorator.js';
 import { Public } from './decorators/public.decorator.js';
 import { UtilisateurCourant } from './decorators/utilisateur-courant.decorator.js';
 import {
   ChangementMotDePasseDto,
   ConnexionDto,
   RafraichissementDto,
+  VerificationDoubleAuthDto,
 } from './dto/auth.dto.js';
 
 /** 20 essais de connexion par quart d'heure et par adresse IP. */
 const limiteConnexion = new Limiteur(20, 15 * 60 * 1000);
+/** 20 codes de double authentification par quart d'heure et par adresse IP. */
+const limiteCode = new Limiteur(20, 15 * 60 * 1000);
 
 @ApiTags('Authentification')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  /** Email et mot de passe ; blocage progressif après 5 essais incorrects. */
+  /**
+   * Email et mot de passe ; blocage progressif après 5 essais incorrects.
+   * Renvoie la session, ou `{ doubleAuth }` si le compte a une application d'authentification.
+   */
   @Public()
   @Post('connexion')
   @HttpCode(200)
-  connexion(@Body() dto: ConnexionDto, @Ip() ip: string): Promise<Session> {
+  connexion(
+    @Body() dto: ConnexionDto,
+    @Ip() ip: string,
+  ): Promise<Session | DefiDoubleAuth> {
     limiteConnexion.verifier(ip);
     return this.auth.connexion(dto.email, dto.motDePasse);
+  }
+
+  /** Étape 2 : code de l'application ou code de secours. */
+  @Public()
+  @Post('double-auth/verification')
+  @HttpCode(200)
+  verifierDoubleAuth(
+    @Body() dto: VerificationDoubleAuthDto,
+    @Ip() ip: string,
+  ): Promise<Session> {
+    limiteCode.verifier(ip);
+    return this.auth.verifierDoubleAuth(dto.jeton, dto.code);
   }
 
   @Public()
@@ -44,6 +70,7 @@ export class AuthController {
 
   /** Tout utilisateur connecté : son profil. */
   @ApiBearerAuth()
+  @AvantDoubleAuth()
   @Get('moi')
   moi(@UtilisateurCourant() u: UtilisateurConnecte) {
     return this.auth.profil(u.id);
@@ -51,6 +78,7 @@ export class AuthController {
 
   /** Tout utilisateur connecté : changer son mot de passe. */
   @ApiBearerAuth()
+  @AvantDoubleAuth()
   @Post('mot-de-passe')
   @HttpCode(204)
   async changerMotDePasse(

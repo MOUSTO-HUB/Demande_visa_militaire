@@ -52,3 +52,16 @@ export function dechiffrerFichier(contenu: Buffer, cle: Buffer): Buffer {
     dechiffreur.final(),
   ]);
 }
+
+// ─── Secrets en base (clé des applications d'authentification) ───────────────
+
+/** Clé dérivée de JWT_SECRET : une copie de la base seule ne suffit pas à lire les secrets. */
+export const cleSecrets = (secretJwt: string): Buffer =>
+  createHash('sha256').update(`visa:secrets:${secretJwt}`).digest();
+
+/** Texte chiffré, encodé en base64url pour une colonne texte. */
+export const chiffrerTexte = (texte: string, cle: Buffer): string =>
+  chiffrerFichier(Buffer.from(texte, 'utf8'), cle).toString('base64url');
+
+export const dechiffrerTexte = (valeur: string, cle: Buffer): string =>
+  dechiffrerFichier(Buffer.from(valeur, 'base64url'), cle).toString('utf8');

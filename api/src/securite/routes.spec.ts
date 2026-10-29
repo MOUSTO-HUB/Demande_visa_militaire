@@ -3,6 +3,8 @@ import { RequestMethod } from '@nestjs/common';
 import { AppController } from '../app.controller.js';
 import { AuditController } from '../audit/audit.controller.js';
 import { AuthController } from '../auth/auth.controller.js';
+import { CLE_AVANT_DOUBLE_AUTH } from '../auth/decorators/avant-double-auth.decorator.js';
+import { DoubleAuthController } from '../auth/double-auth.controller.js';
 import { CLE_PUBLIC } from '../auth/decorators/public.decorator.js';
 import { CLE_ROLES } from '../auth/decorators/roles.decorator.js';
 import { CampagnesController } from '../campagnes/campagnes.controller.js';
@@ -21,6 +23,14 @@ import { UtilisateursController } from '../utilisateurs/utilisateurs.controller.
 const OUVERTES_A_TOUS_CONNECTES: Record<string, string> = {
   'GET /auth/moi': 'chacun lit son propre profil',
   'POST /auth/mot-de-passe': 'chacun change son propre mot de passe',
+  'GET /auth/double-auth': 'état de sa propre double authentification',
+  'POST /auth/double-auth/preparation':
+    'chacun configure son application (mot de passe redemandé)',
+  'POST /auth/double-auth/activation': 'chacun active sa propre application',
+  'POST /auth/double-auth/codes-secours':
+    'chacun régénère ses codes (mot de passe redemandé)',
+  'POST /auth/double-auth/desactivation':
+    'refusée par le service pour les rôles où elle est obligatoire',
   'GET /referentiel':
     'dictionnaire des champs et des pièces, sans donnée personnelle',
 };
@@ -31,6 +41,7 @@ const CONTROLEURS = [
   AuthController,
   CampagnesController,
   DossiersController,
+  DoubleAuthController,
   MilitairesController,
   MrzController,
   PiecesController,
@@ -42,6 +53,7 @@ interface Route {
   route: string;
   roles?: string[];
   public?: boolean;
+  avantDoubleAuth?: boolean;
 }
 
 function routes(): Route[] {
@@ -72,6 +84,7 @@ function routes(): Route[] {
         route: `${RequestMethod[verbe]} ${complet}`,
         roles: lire(CLE_ROLES) as string[] | undefined,
         public: lire(CLE_PUBLIC) as boolean | undefined,
+        avantDoubleAuth: lire(CLE_AVANT_DOUBLE_AUTH) as boolean | undefined,
       });
     }
   }
@@ -112,7 +125,25 @@ describe('droits des routes', () => {
       'GET /sante',
       'POST /auth/connexion',
       'POST /auth/deconnexion',
+      'POST /auth/double-auth/verification',
       'POST /auth/rafraichir',
+    ]);
+  });
+
+  it('n’ouvre avant la double authentification que le profil, le mot de passe et son activation', () => {
+    expect(
+      inventaire
+        .filter((r) => r.avantDoubleAuth)
+        .map((r) => r.route)
+        .sort(),
+    ).toEqual([
+      'GET /auth/double-auth',
+      'GET /auth/moi',
+      'POST /auth/double-auth/activation',
+      'POST /auth/double-auth/codes-secours',
+      'POST /auth/double-auth/desactivation',
+      'POST /auth/double-auth/preparation',
+      'POST /auth/mot-de-passe',
     ]);
   });
 

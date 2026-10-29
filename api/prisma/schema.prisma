@@ -84,6 +84,10 @@ model Utilisateur {
   // Blocage progressif (auth/connexion.regles.ts) : remis à zéro à chaque connexion réussie.
   echecsConnexion   Int       @default(0) @map("echecs_connexion")
   bloqueJusquA      DateTime? @map("bloque_jusqu_a")
+  // Double authentification par application (TOTP), obligatoire pour ADMIN et GESTIONNAIRE.
+  totpSecret        String?   @map("totp_secret") // chiffré (securite/chiffrement.ts)
+  totpDernierPas    Int?      @map("totp_dernier_pas") // un code ne sert qu'une fois
+  codesSecours      String[]  @default([]) @map("codes_secours") // empreintes SHA-256
   creeLe            DateTime  @default(now()) @map("cree_le")
   modifieLe         DateTime  @updatedAt @map("modifie_le")
   creePar           String?   @map("cree_par")

@@ -1,5 +1,7 @@
+import { Role } from '../generated/prisma/enums.js';
 import {
   apresEchec,
+  doubleAuthAActiver,
   ESSAIS_AVANT_BLOCAGE,
   messageBlocage,
   PREMIER_BLOCAGE_MS,
@@ -7,6 +9,26 @@ import {
 
 const MAINTENANT = new Date('2026-10-29T08:00:00Z');
 const duree = (d: Date | null) => d!.getTime() - MAINTENANT.getTime();
+
+describe('doubleAuthAActiver', () => {
+  it('exige la double authentification de l’administration et de la gestion seulement', () => {
+    expect(doubleAuthAActiver({ role: Role.ADMIN, totpSecret: null })).toBe(
+      true,
+    );
+    expect(
+      doubleAuthAActiver({ role: Role.GESTIONNAIRE, totpSecret: null }),
+    ).toBe(true);
+    expect(
+      doubleAuthAActiver({ role: Role.GESTIONNAIRE, totpSecret: 'x' }),
+    ).toBe(false);
+    expect(doubleAuthAActiver({ role: Role.OPERATEUR, totpSecret: null })).toBe(
+      false,
+    );
+    expect(doubleAuthAActiver({ role: Role.LECTEUR, totpSecret: null })).toBe(
+      false,
+    );
+  });
+});
 
 describe('apresEchec', () => {
   it('ne bloque pas avant le 5e essai incorrect', () => {

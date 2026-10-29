@@ -11,6 +11,8 @@ export interface UtilisateurConnecte {
 export interface ChargeJeton {
   sub: string;
   role: Role;
+  /** Double authentification obligatoire mais pas encore activée : accès limité. */
+  aActiver?: boolean;
 }
 
 export interface RequeteAuthentifiee extends Request {
@@ -20,5 +22,14 @@ export interface RequeteAuthentifiee extends Request {
 export interface Session {
   jetonAcces: string;
   jetonRafraichissement: string;
-  utilisateur: UtilisateurConnecte & { motDePasseProvisoire: boolean };
+  utilisateur: UtilisateurConnecte & {
+    motDePasseProvisoire: boolean;
+    doubleAuthAActiver: boolean;
+  };
+}
+
+/** Étape 2 de la connexion : le mot de passe est juste, il reste le code. */
+export interface DefiDoubleAuth {
+  /** Jeton signé (10 minutes) à renvoyer avec le code. */
+  doubleAuth: { jeton: string };
 }

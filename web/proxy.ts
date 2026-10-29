@@ -22,11 +22,18 @@ export async function proxy(request: NextRequest) {
   const acces = request.cookies.get(COOKIE_ACCES)?.value;
   const rafraichissement = request.cookies.get(COOKIE_RAFRAICHISSEMENT)?.value;
 
+  // Chemin de la page, lu par le gabarit (redirection vers « Mon compte »).
+  const suivante = () => {
+    const entetes = new Headers(request.headers);
+    entetes.set('x-chemin', pathname);
+    return NextResponse.next({ request: { headers: entetes } });
+  };
+
   const expiration = acces ? expirationJeton(acces) : null;
   if (expiration && expiration - Date.now() > MARGE_MS) {
     return surConnexion
       ? NextResponse.redirect(new URL('/', request.url))
-      : NextResponse.next();
+      : suivante();
   }
 
   if (rafraichissement) {
@@ -40,7 +47,7 @@ export async function proxy(request: NextRequest) {
       );
       const reponse = surConnexion
         ? NextResponse.redirect(new URL('/', request.url))
-        : NextResponse.next({ request: { headers: request.headers } });
+        : suivante();
       reponse.cookies.set(
         COOKIE_ACCES,
         session.jetonAcces,

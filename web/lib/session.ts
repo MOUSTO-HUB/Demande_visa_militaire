@@ -25,7 +25,12 @@ export const API_URL = process.env.API_URL ?? 'http://localhost:3200/api';
 export interface Session {
   jetonAcces: string;
   jetonRafraichissement: string;
-  utilisateur: { id: string; role: string; motDePasseProvisoire: boolean };
+  utilisateur: {
+    id: string;
+    role: string;
+    motDePasseProvisoire: boolean;
+    doubleAuthAActiver: boolean;
+  };
 }
 
 /**

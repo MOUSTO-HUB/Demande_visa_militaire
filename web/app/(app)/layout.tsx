@@ -1,3 +1,5 @@
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { Bandeau } from '@/components/bandeau';
 import { Navigation } from '@/components/navigation';
 import { profilCourant } from '@/lib/profil';
@@ -7,6 +9,14 @@ export default async function LayoutApplication({
   children,
 }: LayoutProps<'/'>) {
   const profil = await profilCourant();
+  // Mot de passe provisoire ou double authentification à activer : l'API
+  // refuse le reste, on mène directement à « Mon compte ».
+  const chemin = (await headers()).get('x-chemin') ?? '';
+  if (
+    (profil.motDePasseProvisoire || profil.doubleAuthAActiver) &&
+    chemin !== '/compte'
+  )
+    redirect('/compte');
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <Bandeau

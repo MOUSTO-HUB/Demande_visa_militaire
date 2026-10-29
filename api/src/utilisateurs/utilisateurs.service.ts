@@ -7,6 +7,7 @@ import {
 import { hash } from '@node-rs/argon2';
 import { AuditService } from '../audit/audit.service.js';
 import { AuthService } from '../auth/auth.service.js';
+import { SANS_DOUBLE_AUTH } from '../auth/double-auth.service.js';
 import type { UtilisateurConnecte } from '../auth/auth.types.js';
 import { estDoublon } from '../common/erreurs-prisma.js';
 import { ActionAudit, Role } from '../generated/prisma/enums.js';
@@ -114,7 +115,11 @@ export class UtilisateursService {
     return modifie;
   }
 
-  /** Nouveau mot de passe provisoire ; débloque le compte et ferme ses sessions. */
+  /**
+   * Nouveau mot de passe provisoire (oubli, téléphone perdu) : débloque le
+   * compte, retire l'application d'authentification et ferme ses sessions.
+   * L'agent devra réactiver la double authentification à la connexion.
+   */
   async reinitialiser(u: UtilisateurConnecte, id: string) {
     await this.existant(id);
     const provisoire = motDePasseProvisoire();
@@ -125,6 +130,7 @@ export class UtilisateursService {
         motDePasseProvisoire: true,
         echecsConnexion: 0,
         bloqueJusquA: null,
+        ...SANS_DOUBLE_AUTH,
       },
     });
     await this.auth.revoquerTout(id);

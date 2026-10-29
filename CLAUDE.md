@@ -25,6 +25,7 @@ Spécifications et coûts : `docs/CAHIER_DES_CHARGES.md`.
 - Pièces chiffrées (AES-256-GCM, `CLE_PIECES`) par `StockageService` ; ne jamais exposer `cleStockage`.
 - Consultations, modifications, exports et changements de statut : `AuditService.journaliser`.
 - Comptes créés par un ADMIN (mot de passe provisoire affiché une fois) ; premier ADMIN : `node dist/cli/initialiser.js`.
+- Double authentification par application (TOTP, `auth/totp.ts`, `DoubleAuthService`), obligatoire pour ADMIN et GESTIONNAIRE (`connexion.regles.ts`) : `/auth/connexion` peut renvoyer `{ doubleAuth }` au lieu d'une session. Tant qu'elle n'est pas activée, le jeton porte `aActiver` et `JwtAuthGuard` ne laisse passer que les routes `@AvantDoubleAuth()` (profil, mot de passe, activation). Secret chiffré en base (`chiffrerTexte`), codes de secours stockés en empreintes.
 - Données de démonstration toujours fictives.
 
 ## Toujours

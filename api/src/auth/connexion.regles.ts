@@ -1,3 +1,17 @@
+import { Role } from '../generated/prisma/enums.js';
+
+/** Rôles qui doivent activer la double authentification (cahier des charges, 7.2). */
+export const ROLES_DOUBLE_AUTH: Role[] = [Role.ADMIN, Role.GESTIONNAIRE];
+
+export const doubleAuthObligatoire = (role: Role) =>
+  ROLES_DOUBLE_AUTH.includes(role);
+
+/** Vrai si le compte doit encore activer sa double authentification. */
+export const doubleAuthAActiver = (compte: {
+  role: Role;
+  totpSecret: string | null;
+}) => doubleAuthObligatoire(compte.role) && !compte.totpSecret;
+
 /** Essais incorrects tolérés avant un blocage. */
 export const ESSAIS_AVANT_BLOCAGE = 5;
 /** Durée du premier blocage ; elle double à chaque nouvelle série d'échecs (24 h au plus). */

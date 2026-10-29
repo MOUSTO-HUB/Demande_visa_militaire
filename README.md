@@ -53,6 +53,16 @@ pnpm dev:web
 - Site : http://localhost:3002 (comptes de démonstration : `admin@dgsic.test`, `gestion@dgrecm.test`, `operateur@dgrecm.test`, `lecteur@defense.test`, mot de passe `SEED_MOT_DE_PASSE`)
 - Documentation de l'API : http://localhost:3200/api/docs
 
+## Double authentification
+
+Obligatoire pour les rôles ADMIN (DGSIC) et GESTIONNAIRE (DGRECM), facultative pour les autres. À la première connexion, ces comptes n'ont accès qu'à « Mon compte » tant qu'elle n'est pas activée :
+
+1. installer une application gratuite sur le téléphone (Google Authenticator, Microsoft Authenticator ou FreeOTP) ;
+2. dans « Mon compte », redonner son mot de passe, scanner le QR code et saisir le code à 6 chiffres ;
+3. noter les 10 codes de secours (affichés une seule fois).
+
+Ensuite, chaque connexion demande le mot de passe puis le code de l'application. Elle fonctionne sans réseau ni SMS sur le téléphone. Téléphone perdu sans code de secours : un ADMIN fait « Nouveau mot de passe » dans « Comptes », ce qui retire aussi l'application ; l'agent la réactive à la connexion suivante.
+
 Premier compte d'une vraie installation (sans données de démonstration) :
 
 ```bash
