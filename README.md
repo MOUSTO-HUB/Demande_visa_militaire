@@ -3,3 +3,64 @@
 Plateforme de préparation et de suivi des demandes de visa d'études des militaires boursiers (Chine, Russie), pour la DGRECM avec l'appui de la DGSIC.
 
 - Spécifications et coûts : [docs/CAHIER_DES_CHARGES.md](docs/CAHIER_DES_CHARGES.md)
+- Phase en cours : **Phase 1** (base des dossiers). L'extension de remplissage des sites officiels viendra en phases 2 et 3.
+
+## Ce que fait la phase 1
+
+- **Campagnes** : une vague de boursiers vers un pays. Les réponses communes (établissement, dates, adresse, financement…) sont saisies **une seule fois** et reprises dans tous les dossiers.
+- **Import Excel ou CSV** de la liste de la DGRECM : vérification ligne par ligne, puis création des fiches et des dossiers.
+- **Fiche unique par militaire**, réutilisée d'une campagne à l'autre.
+- **Lecture de la MRZ du passeport** (lecteur MRZ ou saisie des deux lignes), avec contrôle des chiffres de contrôle.
+- **Contrôles automatiques** : champs exigés par chaque site, écriture latine en majuscules, dates, validité du passeport 6 mois après le séjour, pièces manquantes.
+- **Pièces** : photos et scans mis automatiquement aux dimensions et au poids exigés par chaque site, chiffrés sur le disque.
+- **Statuts** : à compléter → à valider → validé → en saisie → soumis → rendez-vous → déposé → visa obtenu / refusé, avec historique.
+- **Fiche récapitulative PDF**, export Excel par campagne, journal d'audit de toutes les consultations.
+
+## Démarrer en local
+
+Prérequis : Node 22 ou plus, pnpm, Docker Desktop.
+
+```bash
+pnpm install
+```
+
+```bash
+cp .env.example .env
+```
+
+Dans `.env`, remplacez `JWT_SECRET` et `CLE_PIECES` (les commandes de génération sont indiquées dans le fichier), puis :
+
+```bash
+pnpm db:up
+```
+
+```bash
+pnpm db:migrate
+```
+
+```bash
+pnpm db:seed
+```
+
+```bash
+pnpm dev:api
+```
+
+```bash
+pnpm dev:web
+```
+
+- Site : http://localhost:3002 (comptes de démonstration : `admin@dgsic.test`, `gestion@dgrecm.test`, `operateur@dgrecm.test`, `lecteur@defense.test`, mot de passe `SEED_MOT_DE_PASSE`)
+- Documentation de l'API : http://localhost:3200/api/docs
+
+Premier compte d'une vraie installation (sans données de démonstration) :
+
+```bash
+node api/dist/cli/initialiser.js prenom.nom@exemple.gn Prénoms NOM
+```
+
+## Vérifications
+
+```bash
+pnpm lint && pnpm typecheck && pnpm test && pnpm format:check
+```

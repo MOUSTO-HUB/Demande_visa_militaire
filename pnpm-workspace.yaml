@@ -1,0 +1,11 @@
+packages:
+  - api
+  - web
+
+allowBuilds:
+  '@prisma/engines': true
+  '@scarf/scarf': false # télémétrie de swagger-ui
+  esbuild: true
+  prisma: true
+  sharp: false
+  unrs-resolver: false

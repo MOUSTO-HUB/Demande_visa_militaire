@@ -1,0 +1,246 @@
+// Schéma de données — voir docs/CAHIER_DES_CHARGES.md, section 5.
+//
+// Conventions :
+// - modèles et champs en camelCase côté code, tables et colonnes en snake_case côté SQL ;
+// - les réponses aux formulaires officiels sont des objets JSON { idDuChamp: valeur }
+//   dont les champs sont décrits dans src/referentiel/champs.ts :
+//   champs « MILITAIRE » (réutilisés d'une campagne à l'autre) dans Militaire.profil,
+//   champs « DOSSIER » dans Dossier.donnees, avec valeur par défaut dans Campagne.valeursCommunes.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Énumérations ────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN // DGSIC : comptes, paramètres, journal
+  GESTIONNAIRE // DGRECM : campagnes, import, validation, suivi
+  OPERATEUR // saisie sur les sites officiels
+  LECTEUR // hiérarchie : consultation
+}
+
+/// Pays d'accueil des boursiers (sites officiels de demande de visa).
+enum PaysAccueil {
+  CHINE
+  RUSSIE
+}
+
+enum StatutCampagne {
+  OUVERTE
+  CLOSE
+}
+
+/// Cycle de vie d'un dossier (règles dans src/dossiers/statuts.regles.ts).
+enum StatutDossier {
+  A_COMPLETER
+  A_VALIDER
+  VALIDE
+  EN_SAISIE
+  SOUMIS
+  RDV_PRIS
+  DEPOSE
+  VISA_OBTENU
+  REFUSE
+  ABANDONNE
+}
+
+enum Sexe {
+  MASCULIN
+  FEMININ
+}
+
+enum ActionAudit {
+  CONNEXION
+  CREATION
+  MODIFICATION
+  CONSULTATION
+  EXPORT
+  IMPORT
+  STATUT
+  SUPPRESSION
+}
+
+// ─── Comptes ─────────────────────────────────────────────────────────────────
+
+model Utilisateur {
+  id                String    @id @default(uuid(7))
+  prenoms           String
+  nom               String
+  email             String    @unique
+  role              Role
+  motDePasseHash    String    @map("mot_de_passe_hash")
+  /// Mot de passe provisoire à changer à la première connexion.
+  motDePasseProvisoire Boolean @default(true) @map("mot_de_passe_provisoire")
+  actif             Boolean   @default(true)
+  derniereConnexion DateTime? @map("derniere_connexion")
+  // Blocage progressif (auth/connexion.regles.ts) : remis à zéro à chaque connexion réussie.
+  echecsConnexion   Int       @default(0) @map("echecs_connexion")
+  bloqueJusquA      DateTime? @map("bloque_jusqu_a")
+  creeLe            DateTime  @default(now()) @map("cree_le")
+  modifieLe         DateTime  @updatedAt @map("modifie_le")
+  creePar           String?   @map("cree_par")
+
+  jetonsRafraichissement JetonRafraichissement[]
+  journal                JournalAudit[]
+  dossiersAttribues      Dossier[]               @relation("OperateurDossier")
+  changementsStatut      HistoriqueStatut[]
+
+  @@map("utilisateurs")
+}
+
+model JetonRafraichissement {
+  id            String    @id @default(uuid(7))
+  utilisateurId String    @map("utilisateur_id")
+  jetonHash     String    @unique @map("jeton_hash")
+  expireLe      DateTime  @map("expire_le")
+  revoqueLe     DateTime? @map("revoque_le")
+  creeLe        DateTime  @default(now()) @map("cree_le")
+
+  utilisateur Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+
+  @@index([utilisateurId])
+  @@map("jetons_rafraichissement")
+}
+
+// ─── Campagnes ───────────────────────────────────────────────────────────────
+
+/// Une vague de boursiers vers un pays (ex. « Chine 2026 – Université de Nankin »).
+model Campagne {
+  id                String         @id @default(uuid(7))
+  libelle           String
+  pays              PaysAccueil
+  annee             Int
+  typeVisa          String         @map("type_visa") // ex. X1, visa d'études
+  referenceAccord   String?        @map("reference_accord") // note ou accord de bourse
+  /// Valeurs par défaut des champs « DOSSIER » (établissement, dates, adresse, financement…).
+  valeursCommunes   Json           @default("{}") @map("valeurs_communes")
+  /// Pièces exigées (codes de src/referentiel/pieces.ts) ; vide : celles du pays.
+  piecesExigees     String[]       @default([]) @map("pieces_exigees")
+  statut            StatutCampagne @default(OUVERTE)
+  closeLe           DateTime?      @map("close_le")
+  creeLe            DateTime       @default(now()) @map("cree_le")
+  modifieLe         DateTime       @updatedAt @map("modifie_le")
+  creePar           String?        @map("cree_par")
+
+  dossiers Dossier[]
+
+  @@index([pays, annee])
+  @@map("campagnes")
+}
+
+// ─── Militaires et dossiers ──────────────────────────────────────────────────
+
+/// Fiche unique d'un militaire, réutilisée d'une campagne à l'autre.
+model Militaire {
+  id            String    @id @default(uuid(7))
+  matricule     String    @unique
+  grade         String?
+  nom           String // tel qu'écrit dans le passeport (majuscules, sans accent)
+  prenoms       String
+  sexe          Sexe?
+  dateNaissance DateTime? @map("date_naissance") @db.Date
+  unite         String?
+  telephone     String? // E.164
+  email         String?
+  /// Réponses aux champs « MILITAIRE » (identité, passeport, famille, parcours…).
+  profil        Json      @default("{}")
+  creeLe        DateTime  @default(now()) @map("cree_le")
+  modifieLe     DateTime  @updatedAt @map("modifie_le")
+  creePar       String?   @map("cree_par")
+
+  dossiers Dossier[]
+
+  @@index([nom, prenoms])
+  @@map("militaires")
+}
+
+/// Demande de visa d'un militaire dans une campagne.
+model Dossier {
+  id             String        @id @default(uuid(7))
+  campagneId     String        @map("campagne_id")
+  militaireId    String        @map("militaire_id")
+  statut         StatutDossier @default(A_COMPLETER)
+  /// Réponses aux champs « DOSSIER » propres à ce militaire (remplacent la valeur commune).
+  donnees        Json          @default("{}")
+  operateurId    String?       @map("operateur_id")
+  numeroDemande  String?       @map("numero_demande") // attribué par le site officiel
+  dateRendezVous DateTime?     @map("date_rendez_vous")
+  commentaire    String? // motif du renvoi, remarque de la DGRECM
+  creeLe         DateTime      @default(now()) @map("cree_le")
+  modifieLe      DateTime      @updatedAt @map("modifie_le")
+  creePar        String?       @map("cree_par")
+
+  campagne   Campagne           @relation(fields: [campagneId], references: [id], onDelete: Restrict)
+  militaire  Militaire          @relation(fields: [militaireId], references: [id], onDelete: Restrict)
+  operateur  Utilisateur?       @relation("OperateurDossier", fields: [operateurId], references: [id], onDelete: SetNull)
+  pieces     Piece[]
+  historique HistoriqueStatut[]
+
+  @@unique([campagneId, militaireId])
+  @@index([campagneId, statut])
+  @@map("dossiers")
+}
+
+model HistoriqueStatut {
+  id            String         @id @default(uuid(7))
+  dossierId     String         @map("dossier_id")
+  depuis        StatutDossier?
+  vers          StatutDossier
+  commentaire   String?
+  utilisateurId String?        @map("utilisateur_id")
+  creeLe        DateTime       @default(now()) @map("cree_le")
+
+  dossier     Dossier      @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+  utilisateur Utilisateur? @relation(fields: [utilisateurId], references: [id], onDelete: SetNull)
+
+  @@index([dossierId, creeLe])
+  @@map("historique_statuts")
+}
+
+/// Pièce justificative ; le fichier est chiffré dans le stockage (cleStockage jamais exposée).
+model Piece {
+  id          String    @id @default(uuid(7))
+  dossierId   String    @map("dossier_id")
+  type        String // code de src/referentiel/pieces.ts
+  nomFichier  String    @map("nom_fichier")
+  typeMime    String    @map("type_mime")
+  taille      Int // octets, après préparation
+  largeur     Int? // pixels (images)
+  hauteur     Int?
+  cleStockage String    @unique @map("cle_stockage")
+  purgeeLe    DateTime? @map("purgee_le") // fichier effacé à la clôture de la campagne
+  creeLe      DateTime  @default(now()) @map("cree_le")
+  creePar     String?   @map("cree_par")
+
+  dossier Dossier @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+
+  @@index([dossierId, type])
+  @@map("pieces")
+}
+
+// ─── Journal ─────────────────────────────────────────────────────────────────
+
+model JournalAudit {
+  id            String      @id @default(uuid(7))
+  utilisateurId String?     @map("utilisateur_id")
+  action        ActionAudit
+  entite        String // ex. Dossier, Militaire
+  entiteId      String?     @map("entite_id")
+  details       Json?
+  ip            String?
+  creeLe        DateTime    @default(now()) @map("cree_le")
+
+  utilisateur Utilisateur? @relation(fields: [utilisateurId], references: [id], onDelete: SetNull)
+
+  @@index([creeLe])
+  @@index([entite, entiteId])
+  @@map("journal_audit")
+}

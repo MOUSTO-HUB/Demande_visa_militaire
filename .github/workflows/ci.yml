@@ -1,0 +1,67 @@
+# Intégration continue : chaque push et pull request vers main est vérifié.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifications:
+    name: Lint, types, tests et builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: visa
+          POSTGRES_PASSWORD: visa_ci
+          POSTGRES_DB: demande_visa
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U visa -d demande_visa"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://visa:visa_ci@localhost:5432/demande_visa?schema=public
+      JWT_SECRET: secret-ci-uniquement-pour-les-tests-0123456789
+    steps:
+      - uses: actions/checkout@v4
+
+      # Version de pnpm lue dans "packageManager" (package.json).
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Dépendances
+        run: pnpm install --frozen-lockfile
+
+      - name: Migrations
+        working-directory: api
+        run: pnpm exec prisma migrate deploy --config prisma7.config.ts
+
+      - name: Formatage
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Types
+        run: pnpm typecheck
+
+      - name: Tests
+        run: pnpm test
+
+      - name: Build API
+        run: pnpm --filter @visa/api build
+
+      - name: Build site
+        run: pnpm --filter @visa/web build

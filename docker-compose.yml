@@ -1,0 +1,27 @@
+name: demande_visa
+
+# Base de développement sur le port 5436 (5432 à 5434 sont souvent pris par d'autres projets).
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-visa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-visa_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-demande_visa}
+    ports:
+      - '${POSTGRES_PORT:-5436}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-visa} -d ${POSTGRES_DB:-demande_visa}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

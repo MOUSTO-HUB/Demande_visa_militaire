@@ -1,0 +1,167 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Couleur de l'application (« bleu école ») : changer ici pour tout le site. */
+@theme {
+  --color-marque-50: oklch(97% 0.014 254.604);
+  --color-marque-100: oklch(93.2% 0.032 255.585);
+  --color-marque-200: oklch(88.2% 0.059 254.128);
+  --color-marque-300: oklch(80.9% 0.105 251.813);
+  --color-marque-400: oklch(70.7% 0.165 254.624);
+  --color-marque-500: oklch(62.3% 0.214 259.815);
+  --color-marque-600: oklch(54.6% 0.245 262.881);
+  --color-marque-700: oklch(48.8% 0.243 264.376);
+  --color-marque-800: oklch(42.4% 0.199 265.638);
+  --color-marque-900: oklch(37.9% 0.146 265.522);
+  --color-marque-950: oklch(28.2% 0.091 267.935);
+  /* Bleu ciel des dégradés. */
+  --color-ciel-400: oklch(74.6% 0.16 232.661);
+  --color-ciel-500: oklch(68.5% 0.169 237.323);
+  /* Accent « jaune soleil ». */
+  --color-soleil-100: oklch(96.2% 0.059 95.617);
+  --color-soleil-300: oklch(87.9% 0.169 91.605);
+  --color-soleil-400: oklch(82.8% 0.189 84.429);
+  --color-soleil-900: oklch(41.4% 0.112 45.904);
+  /* Fond des cartes, tableaux et champs (`bg-carte`). */
+  --color-carte: #fff;
+}
+
+:root {
+  color-scheme: light;
+  --fond-page: #f4f7fc;
+  /* Dégradés : couleurs fixes, indépendantes du mode sombre. */
+  --degrade-nuit: #162456;
+  --degrade-bleu: #193cb8;
+  --degrade-vif: #155dfc;
+  --degrade-ciel: #00a6f4;
+}
+
+/*
+ * Mode sombre choisi par l'utilisateur (bouton ☀️/🌙, attribut data-theme
+ * posé sur <html> d'après le cookie « theme ») : fonds noirs,
+ * textes clairs. On inverse les nuances au lieu de doubler chaque classe :
+ * « slate-900 » (texte foncé) devient clair, « marque-50 » (fond pâle) devient
+ * bleu nuit, etc. Le blanc reste blanc (texte des boutons en dégradé).
+ */
+:root[data-theme='sombre'] {
+  color-scheme: dark;
+  --fond-page: #05070d;
+  --color-carte: #0d1322;
+  --degrade-nuit: #020617;
+  --degrade-bleu: #172554;
+  --degrade-vif: #1d4ed8;
+  --degrade-ciel: #0284c7;
+
+  --color-slate-50: #0b1120;
+  --color-slate-100: #141c2e;
+  --color-slate-200: #1e293b;
+  --color-slate-300: #334155;
+  --color-slate-400: #64748b;
+  --color-slate-500: #94a3b8;
+  --color-slate-600: #a9b6c8;
+  --color-slate-700: #cbd5e1;
+  --color-slate-800: #e2e8f0;
+  --color-slate-900: #f1f5f9;
+
+  --color-marque-50: #0c1730;
+  --color-marque-100: #16244a;
+  --color-marque-200: #1e3366;
+  --color-marque-300: #1e40af;
+  --color-marque-400: #3b82f6;
+  --color-marque-500: #3b82f6;
+  --color-marque-600: #60a5fa;
+  --color-marque-700: #60a5fa;
+  --color-marque-800: #93c5fd;
+  --color-marque-900: #bfdbfe;
+  --color-marque-950: #dbeafe;
+
+  --color-soleil-100: #3a2a06;
+  --color-soleil-900: #fde68a;
+
+  --color-red-50: #2a0e12;
+  --color-red-200: #5b1a20;
+  --color-red-300: #7f1d1d;
+  --color-red-600: #ef4444;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-emerald-50: #052e22;
+  --color-emerald-100: #064030;
+  --color-emerald-200: #065f46;
+  --color-emerald-800: #a7f3d0;
+  --color-amber-50: #2a1d05;
+  --color-amber-100: #3a2806;
+  --color-amber-200: #5c3d08;
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fde68a;
+  --color-amber-900: #fef3c7;
+  --color-sky-50: #082033;
+  --color-sky-200: #0c4a6e;
+  --color-sky-800: #bae6fd;
+}
+
+body {
+  background: var(--fond-page);
+  color: var(--color-slate-900);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Bandeau du haut : bleu nuit vers bleu ciel. */
+@utility fond-bandeau {
+  background-image: linear-gradient(
+    110deg,
+    var(--degrade-nuit) 0%,
+    var(--degrade-bleu) 45%,
+    var(--degrade-ciel) 100%
+  );
+}
+
+/* Fond plein en dégradé bleu (boutons, menu actif). */
+@utility fond-degrade {
+  background-image: linear-gradient(
+    135deg,
+    var(--degrade-bleu),
+    var(--degrade-vif) 55%,
+    var(--degrade-ciel)
+  );
+}
+
+/* Fond de carte avec un contour en dégradé bleu (bordure transparente requise). */
+@utility contour-degrade {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--color-carte), var(--color-carte)) padding-box,
+    linear-gradient(135deg, var(--degrade-vif), var(--degrade-ciel)) border-box;
+}
+
+@layer base {
+  /* Téléphones : aucun élément d'une grille ou d'un formulaire ne dépasse l'écran. */
+  .grid > *,
+  .flex > label {
+    min-width: 0;
+  }
+
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* iPhone : les champs date/heure gardent la largeur de leur colonne. */
+  input[type='date'],
+  input[type='time'],
+  input[type='datetime-local'],
+  input[type='month'] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 2.5rem;
+  }
+
+  input::-webkit-date-and-time-value {
+    text-align: left;
+  }
+}
