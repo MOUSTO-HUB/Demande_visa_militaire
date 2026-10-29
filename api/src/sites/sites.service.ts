@@ -45,12 +45,18 @@ export class SitesService {
       };
       const existant = await this.prisma.champSite.findUnique({
         where: { pays_page_cle: { pays, page: dto.page, cle: champ.cle } },
-        select: { id: true },
+        select: { id: true, formatDate: true, options: true },
       });
       if (existant) {
         await this.prisma.champSite.update({
           where: { id: existant.id },
-          data: releve,
+          data: {
+            ...releve,
+            // Format réglé à la main et choix d'une liste en cascade relevée
+            // vide : gardés si la page ne les donne pas.
+            formatDate: releve.formatDate ?? existant.formatDate,
+            options: options.length ? releve.options : (existant.options ?? []),
+          },
         });
         continue;
       }
@@ -131,6 +137,9 @@ export class SitesService {
           mode === ModeCorrespondance.FIXE ? valeurFixe!.trim() : null,
         ...(dto.conversions ? { conversions: dto.conversions } : {}),
         ...(dto.remplir === undefined ? {} : { remplir: dto.remplir }),
+        ...(dto.formatDate === undefined
+          ? {}
+          : { formatDate: dto.formatDate || null }),
         // Un champ ignoré n'est jamais rempli.
         ...(mode === ModeCorrespondance.IGNORER ? { remplir: false } : {}),
         propose: false,

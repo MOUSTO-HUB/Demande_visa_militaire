@@ -3,13 +3,13 @@
 Plateforme de préparation et de suivi des demandes de visa d'études des militaires boursiers (Chine, Russie), pour la DGRECM avec l'appui de la DGSIC.
 
 - Spécifications et coûts : [docs/CAHIER_DES_CHARGES.md](docs/CAHIER_DES_CHARGES.md)
-- Phases livrées : **Phase 1** (base des dossiers, double authentification) et **Phase 2** (extension pour le site chinois COVA, voir [extension/README.md](extension/README.md)). Le site russe (kdmid) viendra en phase 3.
+- Phases livrées : **Phase 1** (base des dossiers, double authentification), **Phase 2** (extension pour le site chinois COVA) et **Phase 3** (même extension pour le site russe kdmid), voir [extension/README.md](extension/README.md).
 
-## Extension pour le site chinois (phase 2)
+## Extension pour les sites officiels (phases 2 et 3)
 
-- **Relevé** : sur chaque page du formulaire COVA, l'agent clique « Relever les champs de cette page » ; tous les champs sont enregistrés, obligatoires ou facultatifs, avec les choix des listes.
-- **Correspondances** (menu « Correspondances COVA ») : chaque champ est relié à une réponse du dossier (proposition automatique d'après le libellé), à une valeur fixe, ou ignoré. « Remplir » est coché d'office pour les obligatoires seulement.
-- **Remplissage** : « Remplir cette page » recopie les réponses du dossier validé ; les obligatoires restés vides sont encadrés en rouge pour l'agent ; les facultatifs non cochés sont sautés. Captcha, pièces et soumission restent à l'agent ; le numéro de demande revient dans le dossier.
+- **Relevé** : sur chaque page du formulaire (COVA ou kdmid), l'agent clique « Relever les champs de cette page » ; tous les champs sont enregistrés, obligatoires ou facultatifs, avec les choix des listes.
+- **Correspondances** (menus « Correspondances COVA » et « Correspondances kdmid ») : chaque champ est relié à une réponse du dossier (proposition automatique d'après le libellé, en français, anglais, chinois ou russe), à une valeur fixe, ou ignoré ; format de date réglable. « Remplir » est coché d'office pour les obligatoires seulement.
+- **Remplissage** : « Remplir cette page » recopie les réponses du dossier validé ; les obligatoires restés vides sont encadrés en rouge pour l'agent ; les facultatifs non cochés sont sautés. Sur kdmid, une liste qui recharge la page est posée en dernier, et l'agent clique de nouveau après le rechargement. Captcha, pièces et soumission restent à l'agent ; le numéro de demande revient dans le dossier.
 
 ## Ce que fait la phase 1
 

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Formulaire d'essai WebForms (fictif)</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 760px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+      .bandeau {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+      }
+      .ligne {
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+      .Label {
+        font-weight: bold;
+        display: block;
+      }
+      .RequiredFieldMark {
+        color: red;
+        vertical-align: super;
+      }
+      .cache {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="bandeau">
+      Page d'essai FICTIVE de l'extension, construite comme un formulaire
+      ASP.NET WebForms (libellés voisins, listes qui rechargent la page). Elle
+      ne reproduit pas le site officiel et n'envoie rien.
+    </p>
+    <form id="formulaireEssai" method="get" action="/webforms">
+      <input type="hidden" name="__VIEWSTATE" value="fictif" />
+
+      <div class="ligne">
+        <span id="essai_lblNom" class="Label">Nom de famille</span>
+        <div>
+          <input type="text" name="essai$txtNom" id="essai_txtNom" />
+          <span id="essai_lbNomRequiredField" class="RequiredFieldMark">*</span>
+          <span id="essai_lbNomErrorMessage" class="Label"></span>
+        </div>
+      </div>
+
+      <div class="ligne">
+        <span id="essai_lblPrenoms" class="Label">Prénom(s)</span>
+        <div>
+          <input type="text" name="essai$txtPrenoms" id="essai_txtPrenoms" />
+          <span id="essai_lbPrenomsRequiredField" class="RequiredFieldMark"
+            >*</span
+          >
+        </div>
+      </div>
+
+      <div class="ligne">
+        <span id="essai_lblSurnom" class="Label">Surnom (facultatif)</span>
+        <div>
+          <input type="text" name="essai$txtSurnom" id="essai_txtSurnom" />
+          <span
+            id="essai_lbSurnomRequiredField"
+            class="RequiredFieldMark"
+          ></span>
+        </div>
+      </div>
+
+      <table>
+        <tr>
+          <td>Date de naissance (jj.mm.aaaa)</td>
+          <td>
+            <input
+              type="text"
+              name="essai$txtNaissance"
+              id="essai_txtNaissance"
+              value="__.__.____"
+            />
+            <span id="essai_rfvNaissance" class="validateur">*</span>
+          </td>
+        </tr>
+        <tr>
+          <td>Sexe</td>
+          <td>
+            <table id="essai_rblSexe">
+              <tr>
+                <td>
+                  <input
+                    type="radio"
+                    name="essai$rblSexe"
+                    id="essai_rblSexe_0"
+                    value="M"
+                  /><label for="essai_rblSexe_0">Masculin</label>
+                </td>
+                <td>
+                  <input
+                    type="radio"
+                    name="essai$rblSexe"
+                    id="essai_rblSexe_1"
+                    value="F"
+                  /><label for="essai_rblSexe_1">Féminin</label>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <div class="ligne">
+        <span id="essai_lblPays" class="Label">Pays de résidence</span>
+        <div>
+          <select
+            name="essai$ddlPays"
+            id="essai_ddlPays"
+            class="postback-dropdown"
+          >
+            <option value="">Choisir un pays</option>
+            <option value="10">GUINEA</option>
+            <option value="11">GUINEA-BISSAU</option>
+            <option value="20">SENEGAL</option>
+          </select>
+          <span id="essai_lbPaysRequiredField" class="RequiredFieldMark"
+            >*</span
+          >
+        </div>
+      </div>
+
+      <div class="ligne">
+        <span id="essai_lblVille" class="Label">Ville de résidence</span>
+        <div>
+          <select name="essai$ddlVille" id="essai_ddlVille" disabled>
+            <option value="">Choisir d'abord le pays</option>
+          </select>
+          <span id="essai_lbVilleRequiredField" class="RequiredFieldMark"
+            >*</span
+          >
+        </div>
+      </div>
+
+      <div class="ligne">
+        <span id="essai_lblCourriel" class="Label">Adresse électronique</span>
+        <div>
+          <input type="text" name="essai$txtCourriel" id="essai_txtCourriel" />
+          <span id="essai_lbCourrielRequiredField" class="RequiredFieldMark"
+            >*</span
+          >
+        </div>
+      </div>
+
+      <div class="ligne cache">
+        <span class="Label">Section masquée</span>
+        <input type="text" name="essai$txtMasque" />
+      </div>
+
+      <p>
+        <input
+          type="checkbox"
+          name="essai$cbExact"
+          id="essai_cbExact"
+          required
+        /><label for="essai_cbExact"
+          >Je certifie l'exactitude des réponses</label
+        >
+      </p>
+
+      <input type="submit" name="essai$btnSuivant" value="Suivant" disabled />
+    </form>
+
+    <script>
+      // Simulation d'ASP.NET : un choix de pays « recharge » la page (envoi du
+      // formulaire vers elle-même) ; au retour, les valeurs sont reprises et la
+      // liste des villes est chargée.
+      // Validateur « obligatoire » comme ceux d'ASP.NET (variable globale).
+      const validateur = document.getElementById('essai_rfvNaissance');
+      validateur.controltovalidate = 'essai_txtNaissance';
+      validateur.evaluationfunction = 'RequiredFieldValidatorEvaluateIsValid';
+      window.Page_Validators = [validateur];
+      const VILLES = {
+        10: ['CONAKRY', 'KANKAN', 'LABE'],
+        11: ['BISSAU'],
+        20: ['DAKAR', 'THIES'],
+      };
+      const formulaire = document.getElementById('formulaireEssai');
+      const valeurs = new URLSearchParams(location.search);
+      const pays = valeurs.get('essai$ddlPays');
+      const ville = document.getElementById('essai_ddlVille');
+      if (pays && VILLES[pays]) {
+        ville.disabled = false;
+        for (const v of VILLES[pays]) ville.add(new Option(v, v));
+      }
+      for (const el of formulaire.elements) {
+        if (!el.name || !valeurs.has(el.name) || el.type === 'hidden') continue;
+        if (el.type === 'radio') el.checked = valeurs.get(el.name) === el.value;
+        else if (el.type === 'checkbox') el.checked = true;
+        else el.value = valeurs.get(el.name);
+      }
+      window.nombreRechargements = Number(valeurs.get('rechargements') ?? 0);
+      document.querySelectorAll('.postback-dropdown').forEach((liste) =>
+        liste.addEventListener('change', () => {
+          const compteur = document.createElement('input');
+          compteur.type = 'hidden';
+          compteur.name = 'rechargements';
+          compteur.value = String(window.nombreRechargements + 1);
+          formulaire.append(compteur);
+          formulaire.submit();
+        }),
+      );
+      formulaire.addEventListener('submit', (e) => e.preventDefault());
+    </script>
+    <!-- Moteur de l'extension, tel qu'injecté sur le site officiel. -->
+    <script src="/page.js"></script>
+  </body>
+</html>

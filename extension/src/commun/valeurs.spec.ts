@@ -79,9 +79,40 @@ describe('choisirOption', () => {
     expect(choisirOption('GUI', pays, {})).toBeNull();
     expect(choisirOption('FRANCE', pays, {})).toBeNull();
   });
+
+  it('passe du pays en français à la liste en anglais ou en russe', () => {
+    expect(choisirOption('GUINEE', pays, {})?.valeur).toBe('324');
+    const russe = [
+      { valeur: 'a', libelle: 'ГВИНЕЯ' },
+      { valeur: 'b', libelle: 'ГВИНЕЯ-БИСАУ' },
+    ];
+    expect(choisirOption('GUINEENNE', russe, {})?.valeur).toBe('a');
+    expect(
+      choisirOption(
+        'COTE D IVOIRE',
+        [{ valeur: 'c', libelle: 'IVORY COAST' }],
+        {},
+      )?.valeur,
+    ).toBe('c');
+  });
 });
 
 describe('decider', () => {
+  it('découpe une date pour un texte ou des listes jour / mois / année', () => {
+    const valeurs = { dateNaissance: '1998-03-05' };
+    const champ = { champId: 'dateNaissance' };
+    expect(
+      decider(site({ ...champ, formatDate: 'dd.MM.yyyy' }), valeurs),
+    ).toEqual({ ordre: { cle: 'k', type: 'texte', valeur: '05.03.1998' } });
+    const jours = ['4', '5', '6'].map((j) => ({ valeur: j, libelle: j }));
+    expect(
+      decider(
+        site({ ...champ, type: 'liste', formatDate: 'd', options: jours }),
+        valeurs,
+      ),
+    ).toEqual({ ordre: { cle: 'k', type: 'liste', valeur: '5' } });
+  });
+
   it('recopie la réponse du dossier ou la valeur fixe', () => {
     expect(decider(site({}), { nom: 'BAH' })).toEqual({
       ordre: { cle: 'k', type: 'texte', valeur: 'BAH' },

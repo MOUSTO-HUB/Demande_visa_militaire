@@ -19,9 +19,21 @@ import type {
 } from '../commun/types.js';
 import { planifier, type ModeRemplissage } from '../commun/valeurs.js';
 
-/** Sites officiels pris en charge (le site russe viendra en phase 3). */
-const SITES: Record<string, { pays: 'CHINE'; nom: string }> = {
-  'consular.mfa.gov.cn': { pays: 'CHINE', nom: 'COVA (Chine)' },
+/** Sites officiels pris en charge (mêmes hôtes que `manifest.json`). */
+const SITES: Record<
+  string,
+  { pays: 'CHINE' | 'RUSSIE'; nom: string; menu: string }
+> = {
+  'consular.mfa.gov.cn': {
+    pays: 'CHINE',
+    nom: 'COVA (Chine)',
+    menu: 'Correspondances COVA',
+  },
+  'visa.kdmid.ru': {
+    pays: 'RUSSIE',
+    nom: 'kdmid (Russie)',
+    menu: 'Correspondances kdmid',
+  },
 };
 
 interface DossierListe {
@@ -218,10 +230,11 @@ async function relever() {
   );
   if (bilan.obligatoiresSansCorrespondance)
     ajouterLigne(
-      `${bilan.obligatoiresSansCorrespondance} champ(s) obligatoire(s) à relier dans la plateforme (« Correspondances COVA »).`,
+      `${bilan.obligatoiresSansCorrespondance} champ(s) obligatoire(s) à relier dans la plateforme (« ${site!.menu} »).`,
       'manquant',
     );
-  if (!page.vue)
+  // COVA est en Element UI : une page sans Element UI y est inattendue.
+  if (!page.vue && site!.pays === 'CHINE')
     ajouterLigne(
       'Formulaire sans Element UI : remplissage par champs HTML simples.',
       '',
@@ -277,6 +290,11 @@ async function remplir() {
     ajouterLigne(`À saisir : ${m.libelle} (${m.raison})`, 'manquant');
   for (const e of resultat.echecs)
     ajouterLigne(`Non rempli : ${e.cle} (${e.raison})`, 'manquant');
+  if (resultat.rechargement)
+    ajouterLigne(
+      `Le choix « ${resultat.rechargement.cle} » recharge la page${resultat.rechargement.enAttente.length ? ` ; ${resultat.rechargement.enAttente.length} autre(s) choix de ce genre attendent` : ''} : une fois la page rechargée, cliquez de nouveau « Remplir cette page » (rien de déjà rempli n'est écrasé).`,
+      'manquant',
+    );
   if (plan.nonReleves.length)
     ajouterLigne(
       `${plan.nonReleves.length} champ(s) jamais relevé(s) sur cette page : cliquez « Relever les champs de cette page ».`,
@@ -299,7 +317,7 @@ async function demarrer() {
   site = SITES[hote];
   $('site').textContent = site
     ? `Site : ${site.nom}`
-    : "Ouvrez le formulaire officiel (COVA) dans l'onglet pour relever ou remplir une page.";
+    : "Ouvrez le formulaire officiel (COVA pour la Chine, kdmid pour la Russie) dans l'onglet pour relever ou remplir une page.";
   $('actions-page').hidden = !site;
   if (!(await estConnecte())) {
     afficher('connexion');

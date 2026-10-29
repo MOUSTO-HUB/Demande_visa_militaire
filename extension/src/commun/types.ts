@@ -60,6 +60,12 @@ export interface ResultatRemplissage {
   remplis: string[];
   /** Champs trouvés sur la page mais impossibles à remplir (ex. choix absent). */
   echecs: { cle: string; raison: string }[];
+  /**
+   * Choix qui recharge la page (liste « postback » d'ASP.NET) : il est posé en
+   * dernier, après la réponse ; les autres champs de ce genre attendent le
+   * clic suivant sur « Remplir », une fois la page rechargée.
+   */
+  rechargement?: { cle: string; enAttente: string[] };
 }
 
 export type MessagePage =

@@ -16,6 +16,12 @@ const LIENS: (LienMenu & { roles?: Role[] })[] = [
     icone: '🧩',
     roles: ['ADMIN', 'GESTIONNAIRE'],
   },
+  {
+    href: '/sites/russie',
+    libelle: 'Correspondances kdmid',
+    icone: '🧩',
+    roles: ['ADMIN', 'GESTIONNAIRE'],
+  },
   { href: '/comptes', libelle: 'Comptes', icone: '👤', roles: ['ADMIN'] },
   { href: '/journal', libelle: 'Journal', icone: '📜', roles: ['ADMIN'] },
 ];

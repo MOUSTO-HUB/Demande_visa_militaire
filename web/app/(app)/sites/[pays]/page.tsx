@@ -31,7 +31,11 @@ export const metadata: Metadata = {
 
 const SITES: Record<string, { pays: PaysAccueil; nom: string }> = {
   chine: { pays: 'CHINE', nom: 'COVA (Chine)' },
+  russie: { pays: 'RUSSIE', nom: 'kdmid (Russie)' },
 };
+
+/** Types de champ qui peuvent attendre une date (ou une partie de date). */
+const AVEC_FORMAT_DATE = new Set(['date', 'texte', 'liste']);
 
 const MODES = Object.keys(LIBELLES_MODE) as ModeCorrespondance[];
 
@@ -224,6 +228,25 @@ export default async function PageCorrespondances(
                         </details>
                       </div>
                     )}
+                    {AVEC_FORMAT_DATE.has(c.type) && (
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <Champ
+                          libelle="Format de date"
+                          aide={
+                            c.type === 'liste'
+                              ? 'Si cette liste est le jour, le mois ou l’année d’une date : dd, MM ou yyyy (d ou M sans zéro).'
+                              : 'Si ce champ attend une date : ex. dd.MM.yyyy. Vide : la réponse est recopiée telle quelle.'
+                          }
+                        >
+                          <Saisie
+                            name="formatDate"
+                            defaultValue={c.formatDate ?? ''}
+                            maxLength={40}
+                            className="font-mono"
+                          />
+                        </Champ>
+                      </div>
+                    )}
                     <label className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
@@ -231,11 +254,6 @@ export default async function PageCorrespondances(
                         defaultChecked={c.remplir}
                       />
                       Remplir ce champ
-                      {c.formatDate && (
-                        <span className="text-xs text-slate-500">
-                          (date au format {c.formatDate})
-                        </span>
-                      )}
                     </label>
                   </FormulaireAction>
                   <div className="mt-2 flex justify-end">

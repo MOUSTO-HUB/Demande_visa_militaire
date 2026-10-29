@@ -34,6 +34,10 @@ export async function enregistrerCorrespondance(
         mode === 'FIXE' ? String(d.get('valeurFixe') ?? '') || null : null,
       conversions,
       remplir: d.get('remplir') === 'on',
+      // Champ absent du formulaire (case, choix…) : format inchangé.
+      ...(d.has('formatDate')
+        ? { formatDate: String(d.get('formatDate')).trim() || null }
+        : {}),
     }),
   );
   if (erreur) return erreur;

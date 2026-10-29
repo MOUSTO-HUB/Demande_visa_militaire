@@ -126,6 +126,9 @@ export function definirVisibilite(f: (el: HTMLElement) => boolean): void {
   estVisible = f;
 }
 
+/** Même règle de visibilité pour le moteur des formulaires HTML. */
+export const visible = (el: HTMLElement) => estVisible(el);
+
 function elementsVisibles(racine: ParentNode): ElementVue[] {
   return [...racine.querySelectorAll<ElementVue>('.el-form-item')].filter(
     (el) => el.__vue__ && estVisible(el),

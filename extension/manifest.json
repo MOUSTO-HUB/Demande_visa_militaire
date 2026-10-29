@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Visa DGRECM – Remplisseur",
   "short_name": "Visa DGRECM",
-  "version": "0.1.0",
-  "description": "Relève les champs du formulaire officiel de demande de visa (Chine) et les remplit depuis les dossiers validés de la DGRECM. L'agent garde le captcha, les pièces et la soumission.",
+  "version": "0.2.0",
+  "description": "Relève les champs des formulaires officiels de demande de visa (Chine : COVA, Russie : kdmid) et les remplit depuis les dossiers validés de la DGRECM. L'agent garde le captcha, les pièces et la soumission.",
   "minimum_chrome_version": "111",
   "action": {
     "default_title": "Visa DGRECM",
@@ -12,18 +12,19 @@
   "permissions": ["storage", "activeTab"],
   "host_permissions": [
     "https://consular.mfa.gov.cn/*",
+    "https://visa.kdmid.ru/*",
     "http://localhost:3200/*"
   ],
   "optional_host_permissions": ["https://*/*", "http://*/*"],
   "content_scripts": [
     {
-      "matches": ["https://consular.mfa.gov.cn/*"],
+      "matches": ["https://consular.mfa.gov.cn/*", "https://visa.kdmid.ru/*"],
       "js": ["pont.js"],
       "all_frames": false,
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://consular.mfa.gov.cn/*"],
+      "matches": ["https://consular.mfa.gov.cn/*", "https://visa.kdmid.ru/*"],
       "js": ["page.js"],
       "all_frames": false,
       "run_at": "document_idle",

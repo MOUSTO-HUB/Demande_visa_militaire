@@ -11,6 +11,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
   Min,
   ValidateIf,
@@ -108,6 +109,20 @@ export class CorrespondanceDto {
   @IsOptional()
   @IsBoolean()
   remplir?: boolean;
+
+  /**
+   * Format de date attendu par le champ : « dd.MM.yyyy » pour un texte, ou
+   * « dd », « MM », « yyyy » pour des listes séparées ; null pour retirer.
+   */
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsString()
+  @MaxLength(40)
+  @Matches(/^(?:yyyy|yy|MM|M|dd|d|[ ./-])+$/, {
+    message:
+      'Format de date : yyyy (année), MM (mois), dd (jour) et séparateurs . / - (ex. dd.MM.yyyy).',
+  })
+  formatDate?: string | null;
 }
 
 export class RemplissageDto {

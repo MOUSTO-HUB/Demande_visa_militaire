@@ -30,32 +30,37 @@ export function formaterDate(jour: string, format: string): string {
 }
 
 /**
- * Nationalité (lue dans la MRZ, en anglais, ou saisie en français) → pays :
- * les listes des sites proposent souvent des pays, pas des nationalités.
+ * Pays et nationalités équivalents (français, anglais, russe) : la fiche dit
+ * « GUINEE » ou « GUINEAN » (MRZ), la liste du site « GUINEA », « Guinée »
+ * ou « ГВИНЕЯ ». Les noms de pays viennent en premier.
  */
-const PAYS_DE_NATIONALITE: Record<string, string> = {
-  guinean: 'guinea',
-  guineen: 'guinee',
-  guineenne: 'guinee',
-  ivorian: 'cote d ivoire',
-  ivoirien: 'cote d ivoire',
-  ivoirienne: 'cote d ivoire',
-  senegalese: 'senegal',
-  senegalais: 'senegal',
-  senegalaise: 'senegal',
-  malian: 'mali',
-  malien: 'mali',
-  malienne: 'mali',
-  'sierra leonean': 'sierra leone',
-  liberian: 'liberia',
-  french: 'france',
-  francais: 'france',
-  francaise: 'france',
-  chinese: 'china',
-  chinois: 'chine',
-  russian: 'russia',
-  russe: 'russie',
-};
+const PAYS: string[][] = [
+  ['guinee', 'guinea', 'гвинея', 'guinean', 'guineen', 'guineenne', 'gin'],
+  [
+    'cote d ivoire',
+    'ivory coast',
+    'кот д ивуар',
+    'ivorian',
+    'ivoirien',
+    'ivoirienne',
+    'civ',
+  ],
+  ['senegal', 'сенегал', 'senegalese', 'senegalais', 'senegalaise', 'sen'],
+  ['mali', 'мали', 'malian', 'malien', 'malienne', 'mli'],
+  ['sierra leone', 'сьерра леоне', 'sierra leonean', 'sle'],
+  ['liberia', 'либерия', 'liberian', 'lbr'],
+  ['france', 'франция', 'french', 'francais', 'francaise', 'fra'],
+  ['chine', 'china', 'китаи', 'chinese', 'chinois', 'chn'],
+  [
+    'russie',
+    'russia',
+    'russian federation',
+    'россия',
+    'russian',
+    'russe',
+    'rus',
+  ],
+].map((noms) => noms.map(normaliser));
 
 /** Choix du site pour une valeur du dossier : conversion réglée, valeur identique ou libellé. */
 export function choisirOption(
@@ -68,10 +73,14 @@ export function choisirOption(
     return options.find((o) => o.valeur === convertie) ?? null;
   const exacte = options.find((o) => o.valeur === valeur);
   if (exacte) return exacte;
-  const trouvee = chercherParLibelle(normaliser(valeur), options);
+  const cible = normaliser(valeur);
+  const trouvee = chercherParLibelle(cible, options);
   if (trouvee) return trouvee;
-  const pays = PAYS_DE_NATIONALITE[normaliser(valeur)];
-  return pays ? chercherParLibelle(pays, options) : null;
+  for (const nom of PAYS.find((noms) => noms.includes(cible)) ?? []) {
+    const pays = nom === cible ? null : chercherParLibelle(nom, options);
+    if (pays) return pays;
+  }
+  return null;
 }
 
 function chercherParLibelle(
@@ -114,8 +123,17 @@ export function decider(
     return site.obligatoire
       ? { manquant: 'pas encore relié à une réponse du dossier' }
       : { ignore: 'pas encore relié' };
-  const brute =
+  const valeur =
     site.mode === 'FIXE' ? site.valeurFixe : valeurs[site.champId ?? ''];
+  // Date en texte libre ou en listes séparées (jour, mois, année) : le format
+  // réglé (« dd.MM.yyyy », « dd », « MM », « yyyy ») donne la valeur attendue.
+  const brute =
+    valeur &&
+    site.formatDate &&
+    ['texte', 'liste', 'choix'].includes(site.type) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(valeur)
+      ? formaterDate(valeur, site.formatDate)
+      : valeur;
   if (!brute)
     return site.obligatoire
       ? { manquant: 'réponse absente du dossier' }
@@ -222,7 +240,24 @@ export function planifier(
       plan.sautes++;
       continue;
     }
-    const decision = decider({ ...site, obligatoire }, valeurs);
+    // Liste en cascade : ses choix dépendent du champ précédent, ceux de la
+    // page affichée priment sur ceux du relevé (gardés si la page n'en montre
+    // aucun : liste Element UI chargée à la frappe).
+    if (
+      site.type === 'liste' &&
+      champ.options?.length === 0 &&
+      !site.options.length
+    ) {
+      plan.manquants.push({
+        cle: champ.cle,
+        libelle: champ.libelle,
+        raison:
+          'liste encore vide : faites le choix précédent, puis cliquez de nouveau « Remplir »',
+      });
+      continue;
+    }
+    const options = champ.options?.length ? champ.options : site.options;
+    const decision = decider({ ...site, obligatoire, options }, valeurs);
     if ('ordre' in decision) plan.ordres.push(decision.ordre);
     else if ('manquant' in decision)
       plan.manquants.push({

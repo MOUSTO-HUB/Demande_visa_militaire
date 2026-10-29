@@ -13,10 +13,12 @@ Spécifications et coûts : `docs/CAHIER_DES_CHARGES.md`.
 
 ## Extension et sites officiels
 
-- Aucun champ de site n'est écrit en dur : l'extension **relève** les champs de la page (`moteur/element.ts` pour Vue 2 + Element UI via `__vue__`, `moteur/natif.ts` pour le HTML simple), l'API les stocke (`ChampSite`, module `api/src/sites`) avec une correspondance (`CHAMP`, `FIXE`, `IGNORER`, `A_DEFINIR`) proposée par `sites/proposition.ts`. `remplir` vaut `obligatoire` au premier relevé.
-- Le plan de remplissage est calculé hors de la page par `extension/src/commun/valeurs.ts` (`planifier`, `decider`, `choisirOption`) ; jamais d'écrasement d'un champ déjà rempli, jamais de clic sur « Suivant »/« Soumettre ».
+- Sites pris en charge : COVA (Chine, Vue 2 + Element UI) et kdmid (Russie, ASP.NET WebForms) ; hôtes dans `extension/manifest.json` et `SITES` de `popup.ts`, écrans `web/app/(app)/sites/[pays]` (`chine`, `russie`).
+- Aucun champ de site n'est écrit en dur : l'extension **relève** les champs de la page (`moteur/element.ts` pour Vue 2 + Element UI via `__vue__`, `moteur/natif.ts` pour le HTML : libellé voisin, marque `RequiredFieldMark`, `Page_Validators`), l'API les stocke (`ChampSite`, module `api/src/sites`) avec une correspondance (`CHAMP`, `FIXE`, `IGNORER`, `A_DEFINIR`) proposée par `sites/proposition.ts` (motifs français, anglais, chinois, russe). `remplir` vaut `obligatoire` au premier relevé ; `formatDate` est réglable (date en texte, ou `dd`/`MM`/`yyyy` pour des listes séparées) et n'est pas effacé par un relevé qui n'en donne pas.
+- Le plan de remplissage est calculé hors de la page par `extension/src/commun/valeurs.ts` (`planifier`, `decider`, `choisirOption`) ; jamais d'écrasement d'un champ déjà rempli, jamais de clic sur « Suivant »/« Soumettre ». Les choix d'une liste lus sur la page priment sur ceux du relevé (listes en cascade).
+- Listes qui rechargent la page (`postback-dropdown`, `__doPostBack`) : `remplirNatif` les pose en dernier, une par clic, après sa réponse (`rechargement` dans le résultat).
 - Le script de page (monde MAIN) ne parle qu'au pont par `postMessage` ; les jetons restent dans `chrome.storage.session`.
-- Tests du moteur sur un formulaire **fictif** (`extension/essai/formulaire.js`, vrais Vue 2 + Element UI sous jsdom) ; ne jamais reproduire le site officiel.
+- Tests du moteur sur des formulaires **fictifs** (`extension/essai/formulaire.js`, vrais Vue 2 + Element UI ; `extension/essai/webforms.html`, structure WebForms ; sous jsdom) ; ne jamais reproduire les sites officiels.
 
 ## Règles du domaine
 

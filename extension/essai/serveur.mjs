@@ -1,14 +1,16 @@
-// Serveur de la page d'essai : http://localhost:4100 (formulaire fictif + moteur construit).
+// Serveur de la page d'essai : http://localhost:4100 (formulaires fictifs Element UI et WebForms + moteur construit).
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 
+const PORT = Number(process.env.PORT ?? 4100);
 const RACINE = new URL('..', import.meta.url).pathname.replace(
   /^\/(\w:)/,
   '$1',
 );
 const FICHIERS = {
   '/': 'essai/index.html',
+  '/webforms': 'essai/webforms.html',
   '/formulaire.js': 'essai/formulaire.js',
   '/page.js': 'dist/page.js',
   '/vue.js': 'node_modules/vue/dist/vue.min.js',
@@ -40,4 +42,6 @@ createServer(async (req, res) => {
   } catch {
     res.writeHead(404).end();
   }
-}).listen(4100, () => console.log('Page d’essai : http://localhost:4100'));
+}).listen(PORT, () =>
+  console.log(`Pages d’essai : http://localhost:${PORT} et /webforms`),
+);
