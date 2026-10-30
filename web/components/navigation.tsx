@@ -10,6 +10,7 @@ const LIENS: (LienMenu & { roles?: Role[] })[] = [
   { href: '/campagnes', libelle: 'Campagnes', icone: '🎓' },
   { href: '/dossiers', libelle: 'Dossiers', icone: '🗂️' },
   { href: '/militaires', libelle: 'Militaires', icone: '🪖' },
+  { href: '/alertes', libelle: 'Alertes', icone: '🔔' },
   {
     href: '/sites/chine',
     libelle: 'Correspondances COVA',

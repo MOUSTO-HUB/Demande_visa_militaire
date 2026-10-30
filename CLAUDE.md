@@ -29,6 +29,12 @@ Spécifications et coûts : `docs/CAHIER_DES_CHARGES.md`.
 - Passeport : analyse et corrections de la MRZ dans `api/src/mrz/mrz.ts` (`lireMrz` ; une correction n'est gardée que si une seule version passe les chiffres de contrôle). Photo lue **dans le navigateur** (`web/lib/ocr-passeport.ts`, `components/lecture-passeport.tsx`, Tesseract.js) : seul le texte reconnu part vers `POST /mrz/analyse`, jamais l'image. Moteur et modèle copiés dans `web/public/ocr` par `web/scripts/copier-ocr.mjs` (lancé par `dev` et `build`, non versionné, exclu de `proxy.ts`, du lint et du `no-store`) ; CSP : `'wasm-unsafe-eval'` et `worker-src 'self'`.
 - Exigences de format des pièces : `referentiel/pieces.ts` (valeurs à confirmer par le relevé de la phase 0). Préparation des images : `pieces/preparation.ts` (sharp).
 
+## Espace du militaire, messages, suivi
+
+- Espace du militaire (`api/src/espace`, site `app/m/[jeton]` et `app/espace`) : lien personnel (`AccesMilitaire`, jeton en empreinte + chiffré) puis code à 6 chiffres par email/SMS ; jeton `{ sub: dossierId, typ: 'militaire' }` de 2 heures, cookie `visa_espace` à part. Routes `@EspaceMilitaire()` (+ `@MilitaireCourant()`) : `JwtAuthGuard` n'y accepte que ce jeton et le refuse partout ailleurs ; le dossier vient du jeton, jamais d'un paramètre. Questions posées : `espace/champs-militaire.ts` (jamais les réponses communes de la campagne ni les sections PROFESSION et DECLARATIONS). Le militaire ne modifie qu'en `A_COMPLETER` (`verifierModifiableParMilitaire`) ; audit avec utilisateur null et `par: 'MILITAIRE'`.
+- Messages (`api/src/messages`) : toujours par `MessagesService.enfiler` (file en base, table `messages`, envoyée toutes les 30 s par `PlanificateurService`) ou `envoyerCode` (immédiat). Textes dans `modeles.ts`, composés à l'envoi : le lien et le code ne sont jamais stockés (aperçu masqué). Rappels : `rappels.regles.ts` (clé unique par rappel). Envoi : `EnvoiService` (SMTP, passerelle SMS HTTP ; simulation dans le journal hors production). `ENVOIS_AUTOMATIQUES=non` coupe le planificateur.
+- Suivi (`api/src/suivi`) : `alertes.regles.ts` (fonction pure) ; `GET /campagnes/:id/suivi` et `GET /alertes`.
+
 ## Sécurité
 
 - Toutes les routes exigent un jeton sauf `@Public()` ; restreindre avec `@Roles(...)`. `src/securite/routes.spec.ts` inventorie les routes : une nouvelle route doit porter `@Roles`/`@Public`, sinon être justifiée dans `OUVERTES_A_TOUS_CONNECTES` ; un nouveau contrôleur doit être ajouté à `CONTROLEURS`.

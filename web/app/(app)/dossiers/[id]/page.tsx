@@ -27,11 +27,15 @@ import {
   peutGerer,
   tailleFr,
   type DossierDetail,
+  type EtatAcces,
   type StatutDossier,
 } from '@/lib/types';
+import { CarteEspaceMilitaire } from '@/components/espace-dossier';
 import {
   attribuer,
   changerStatut,
+  creerLienAcces,
+  envoyerMessageMilitaire,
   deposerPiece,
   enregistrerDonnees,
   analyserMrz,
@@ -53,11 +57,15 @@ export default async function PageDossier(props: PageProps<'/dossiers/[id]'>) {
   if (!dossier) notFound();
   const gestion = peutGerer(profil.role);
   const agent = estAgent(profil.role);
-  const operateurs = gestion
-    ? await lireApi<{ id: string; prenoms: string; nom: string }[]>(
-        '/utilisateurs/operateurs',
-      )
-    : [];
+  const [operateurs, espace] = await Promise.all([
+    gestion
+      ? lireApi<{ id: string; prenoms: string; nom: string }[]>(
+          '/utilisateurs/operateurs',
+        )
+      : [],
+    // Coordonnées et messages : agents seulement (pas le lecteur).
+    agent ? lireApi<EtatAcces>(`/dossiers/${id}/messages`) : null,
+  ]);
 
   const pays = dossier.campagne.pays;
   const bloquants = dossier.anomalies.filter((a) => a.niveau === 'BLOQUANT');
@@ -408,6 +416,25 @@ export default async function PageDossier(props: PageProps<'/dossiers/[id]'>) {
           <div className="flex flex-col gap-4">{sections}</div>
         )}
       </div>
+
+      {espace && (
+        <div className="mt-6">
+          <CarteEspaceMilitaire
+            etat={espace}
+            statut={dossier.statut}
+            rendezVous={!!dossier.dateRendezVous}
+            gestion={gestion}
+            ouverte={dossier.campagne.statut === 'OUVERTE'}
+            creerLien={creerLienAcces.bind(null, id)}
+            relancer={envoyerMessageMilitaire.bind(null, id, 'RAPPEL_FICHE')}
+            convoquer={envoyerMessageMilitaire.bind(
+              null,
+              id,
+              'CONVOCATION_DEPOT',
+            )}
+          />
+        </div>
+      )}
 
       {/* Historique */}
       <div className="mt-6">

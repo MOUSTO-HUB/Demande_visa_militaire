@@ -73,6 +73,16 @@ export function FormulaireCampagne({
             maxLength={200}
           />
         </Champ>
+        <Champ
+          libelle="Date limite des fiches"
+          aide="Les militaires reçoivent un rappel 7, 3 et 1 jour(s) avant, puis le lendemain s'ils n'ont pas envoyé leur fiche."
+        >
+          <Saisie
+            name="dateLimiteFiche"
+            type="date"
+            defaultValue={campagne?.dateLimiteFiche?.slice(0, 10) ?? ''}
+          />
+        </Champ>
       </div>
       <fieldset className="text-sm">
         <legend className="mb-2 font-medium text-slate-800">

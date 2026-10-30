@@ -8,12 +8,16 @@ import { DoubleAuthController } from '../auth/double-auth.controller.js';
 import { CLE_PUBLIC } from '../auth/decorators/public.decorator.js';
 import { CLE_ROLES } from '../auth/decorators/roles.decorator.js';
 import { CampagnesController } from '../campagnes/campagnes.controller.js';
+import { CLE_ESPACE_MILITAIRE } from '../auth/decorators/espace-militaire.decorator.js';
 import { DossiersController } from '../dossiers/dossiers.controller.js';
+import { AccesController } from '../espace/acces.controller.js';
+import { EspaceController } from '../espace/espace.controller.js';
 import { MilitairesController } from '../militaires/militaires.controller.js';
 import { MrzController } from '../mrz/mrz.controller.js';
 import { PiecesController } from '../pieces/pieces.controller.js';
 import { ReferentielController } from '../referentiel/referentiel.controller.js';
 import { SitesController } from '../sites/sites.controller.js';
+import { SuiviController } from '../suivi/suivi.controller.js';
 import { UtilisateursController } from '../utilisateurs/utilisateurs.controller.js';
 
 /**
@@ -37,17 +41,20 @@ const OUVERTES_A_TOUS_CONNECTES: Record<string, string> = {
 };
 
 const CONTROLEURS = [
+  AccesController,
   AppController,
   AuditController,
   AuthController,
   CampagnesController,
   DossiersController,
   DoubleAuthController,
+  EspaceController,
   MilitairesController,
   MrzController,
   PiecesController,
   ReferentielController,
   SitesController,
+  SuiviController,
   UtilisateursController,
 ];
 
@@ -56,6 +63,7 @@ interface Route {
   roles?: string[];
   public?: boolean;
   avantDoubleAuth?: boolean;
+  espace?: boolean;
 }
 
 function routes(): Route[] {
@@ -87,6 +95,7 @@ function routes(): Route[] {
         roles: lire(CLE_ROLES) as string[] | undefined,
         public: lire(CLE_PUBLIC) as boolean | undefined,
         avantDoubleAuth: lire(CLE_AVANT_DOUBLE_AUTH) as boolean | undefined,
+        espace: lire(CLE_ESPACE_MILITAIRE) as boolean | undefined,
       });
     }
   }
@@ -103,7 +112,7 @@ describe('droits des routes', () => {
   it.each(inventaire.map((r) => [r.route, r]))(
     '%s déclare qui peut y accéder',
     (route, r) => {
-      const declaree = r.public || (r.roles?.length ?? 0) > 0;
+      const declaree = r.public || r.espace || (r.roles?.length ?? 0) > 0;
       expect(
         declaree || route in OUVERTES_A_TOUS_CONNECTES,
         `${route} : ajouter @Roles(...) ou @Public()`,
@@ -129,6 +138,9 @@ describe('droits des routes', () => {
       'POST /auth/deconnexion',
       'POST /auth/double-auth/verification',
       'POST /auth/rafraichir',
+      'POST /espace/acces',
+      'POST /espace/code',
+      'POST /espace/connexion',
     ]);
   });
 
@@ -149,10 +161,28 @@ describe('droits des routes', () => {
     ]);
   });
 
+  it("limite l'espace du militaire à ses routes /espace, sans rôle d'agent", () => {
+    const espace = inventaire.filter((r) => r.espace);
+    expect(espace.map((r) => r.route).sort()).toEqual([
+      'DELETE /espace/pieces/:id',
+      'GET /espace/dossier',
+      'POST /espace/envoi',
+      'POST /espace/pieces',
+      'PUT /espace/donnees',
+    ]);
+    for (const r of espace) {
+      expect(r.roles, r.route).toBeUndefined();
+      expect(r.public, r.route).toBeFalsy();
+    }
+    // Aucune route /espace ouverte autrement que par le lien ou le jeton du militaire.
+    for (const r of inventaire.filter((r) => r.route.includes(' /espace/')))
+      expect(r.public || r.espace, r.route).toBe(true);
+  });
+
   it("n'ouvre jamais les pièces ni le journal au lecteur", () => {
     for (const r of inventaire.filter(
       (r) => r.route.includes('/pieces') || r.route.includes('/journal'),
     ))
-      expect(r.roles, r.route).not.toContain('LECTEUR');
+      expect(r.roles ?? [], r.route).not.toContain('LECTEUR');
   });
 });

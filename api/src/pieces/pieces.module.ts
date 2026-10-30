@@ -7,5 +7,6 @@ import { PiecesService } from './pieces.service.js';
   imports: [DossiersModule],
   controllers: [PiecesController],
   providers: [PiecesService],
+  exports: [PiecesService],
 })
 export class PiecesModule {}

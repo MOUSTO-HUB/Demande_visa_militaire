@@ -10,6 +10,8 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
+  ValidateIf,
   Max,
   MaxLength,
   Min,
@@ -52,6 +54,14 @@ export class CreationCampagneDto {
   @ArrayMaxSize(20)
   @IsIn(CODES_PIECES, { each: true, message: 'Pièce inconnue.' })
   piecesExigees?: string[];
+
+  /** « AAAA-MM-JJ » : fiches à envoyer avant cette date (rappels J-7, J-3, J-1 et alertes) ; null pour retirer. */
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'Date limite des fiches : format AAAA-MM-JJ.',
+  })
+  dateLimiteFiche?: string | null;
 }
 
 export class ModificationCampagneDto extends PartialType(CreationCampagneDto) {}

@@ -17,11 +17,19 @@ import {
   LIBELLES_STATUT,
   ORDRE_STATUTS,
   peutGerer,
+  dateFr,
   type CampagneDetail,
   type DossierListe,
   type Page,
+  type SuiviCampagne,
 } from '@/lib/types';
-import { cloturerCampagne, modifierCampagne, purgerPieces } from '../actions';
+import { ListeAlertes } from '@/components/liste-alertes';
+import {
+  cloturerCampagne,
+  envoyerLiensCampagne,
+  modifierCampagne,
+  purgerPieces,
+} from '../actions';
 import { FormulaireCampagne } from '../formulaire-campagne';
 
 export const metadata: Metadata = { title: 'Campagne · Demandes de visa' };
@@ -40,11 +48,13 @@ export default async function PageCampagne(
     operateur: parametre(sp.operateur),
     page: parametre(sp.page),
   };
-  const [page, profil, ref] = await Promise.all([
+  const [page, profil, ref, suivi] = await Promise.all([
     lireApi<Page<DossierListe>>(`/dossiers?${requeteDossiers(filtres)}`),
     profilCourant(),
     referentiel(),
+    lireApi<SuiviCampagne>(`/campagnes/${id}/suivi`),
   ]);
+  const sansLien = suivi.alertes.filter((a) => a.type === 'SANS_ACCES').length;
   const gestion = peutGerer(profil.role);
   const ouverte = campagne.statut === 'OUVERTE';
   const libellePiece = (code: string) =>
@@ -117,6 +127,61 @@ export default async function PageCampagne(
           </p>
         )}
       </div>
+
+      {suivi.total > 0 && (
+        <div className="mb-6 grid gap-4 lg:grid-cols-3">
+          <Carte titre="Suivi">
+            <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 text-sm">
+              {(
+                [
+                  [
+                    'Date limite des fiches',
+                    suivi.campagne.dateLimiteFiche
+                      ? dateFr(suivi.campagne.dateLimiteFiche)
+                      : 'non fixée',
+                  ],
+                  ['Fiches en retard', suivi.indicateurs.enRetard],
+                  [
+                    'Dossiers avec anomalies bloquantes',
+                    suivi.indicateurs.avecBloquants,
+                  ],
+                  [
+                    "Liens d'accès envoyés",
+                    `${suivi.indicateurs.liensEnvoyes} / ${suivi.total}`,
+                  ],
+                  [
+                    'Militaires connectés à leur espace',
+                    suivi.indicateurs.connectes,
+                  ],
+                  ['Messages en échec', suivi.indicateurs.messagesEnEchec],
+                ] as const
+              ).map(([libelle, valeur]) => (
+                <div key={libelle} className="contents">
+                  <dt className="text-slate-600">{libelle}</dt>
+                  <dd className="text-right font-semibold text-marque-950">
+                    {valeur}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {gestion && ouverte && sansLien > 0 && (
+              <div className="mt-4">
+                <FormulaireAction
+                  action={envoyerLiensCampagne.bind(null, id)}
+                  libelle={`Envoyer les liens d'accès (${sansLien})`}
+                  libelleEnCours="Envoi…"
+                  confirmation={`Envoyer un lien personnel aux ${sansLien} militaire(s) dont la fiche est à compléter ?`}
+                />
+              </div>
+            )}
+          </Carte>
+          <div className="lg:col-span-2">
+            <Carte titre={`Alertes (${suivi.alertes.length})`}>
+              <ListeAlertes alertes={suivi.alertes} limite={12} />
+            </Carte>
+          </div>
+        </div>
+      )}
 
       <FiltresDossiers
         chemin={`/campagnes/${id}`}

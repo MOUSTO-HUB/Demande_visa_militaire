@@ -30,9 +30,10 @@ export class PiecesService {
   /**
    * Dépose une pièce, préparée au format du site officiel du pays de la campagne.
    * Une nouvelle pièce du même type remplace l'ancienne (sauf « Autre document »).
+   * `u` null : le militaire, dans son espace, sur son propre dossier.
    */
   async deposer(
-    u: UtilisateurConnecte,
+    u: UtilisateurConnecte | null,
     dossierId: string,
     type: CodePiece,
     fichier: { buffer: Buffer; originalname: string },
@@ -42,7 +43,8 @@ export class PiecesService {
       include: { campagne: true },
     });
     if (!dossier) throw new NotFoundException('Dossier introuvable.');
-    this.dossiers.verifierModifiable(u, dossier);
+    if (u) this.dossiers.verifierModifiable(u, dossier);
+    else this.dossiers.verifierModifiableParMilitaire(dossier);
 
     const exigences = EXIGENCES[dossier.campagne.pays];
     let prepare;
@@ -79,7 +81,7 @@ export class PiecesService {
         largeur: prepare.largeur,
         hauteur: prepare.hauteur,
         cleStockage,
-        creePar: u.id,
+        creePar: u?.id ?? 'MILITAIRE',
       },
       omit: { cleStockage: true },
     });
@@ -91,6 +93,7 @@ export class PiecesService {
       dossierId,
       type,
       remplace: anciennes.length,
+      ...(u ? {} : { par: 'MILITAIRE' }),
     });
     return { piece, avertissements: prepare.avertissements };
   }
@@ -111,18 +114,26 @@ export class PiecesService {
     return { contenu, type: piece.typeMime, nom: piece.nomFichier };
   }
 
-  async supprimer(u: UtilisateurConnecte, id: string) {
+  /** `u` null : le militaire, qui ne retire que les pièces de son dossier. */
+  async supprimer(
+    u: UtilisateurConnecte | null,
+    id: string,
+    dossierMilitaire?: string,
+  ) {
     const piece = await this.prisma.piece.findUnique({
       where: { id },
       include: { dossier: { include: { campagne: true } } },
     });
-    if (!piece) throw new NotFoundException('Pièce introuvable.');
-    this.dossiers.verifierModifiable(u, piece.dossier);
+    if (!piece || (!u && piece.dossierId !== dossierMilitaire))
+      throw new NotFoundException('Pièce introuvable.');
+    if (u) this.dossiers.verifierModifiable(u, piece.dossier);
+    else this.dossiers.verifierModifiableParMilitaire(piece.dossier);
     await this.stockage.supprimer(piece.cleStockage);
     await this.prisma.piece.delete({ where: { id } });
     await this.audit.journaliser(u, ActionAudit.SUPPRESSION, 'Piece', id, {
       dossierId: piece.dossierId,
       type: piece.type,
+      ...(u ? {} : { par: 'MILITAIRE' }),
     });
   }
 }

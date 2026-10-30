@@ -3,7 +3,14 @@
 Plateforme de préparation et de suivi des demandes de visa d'études des militaires boursiers (Chine, Russie), pour la DGRECM avec l'appui de la DGSIC.
 
 - Spécifications et coûts : [docs/CAHIER_DES_CHARGES.md](docs/CAHIER_DES_CHARGES.md)
-- Phases livrées : **Phase 1** (base des dossiers, double authentification), **Phase 2** (extension pour le site chinois COVA) et **Phase 3** (même extension pour le site russe kdmid), voir [extension/README.md](extension/README.md).
+- Phases livrées : **Phase 1** (base des dossiers, double authentification), **Phase 2** (extension pour le site chinois COVA), **Phase 3** (même extension pour le site russe kdmid, voir [extension/README.md](extension/README.md)) et **Phase 4** (espace du militaire, messages, alertes et tableau de bord).
+
+## Espace du militaire, messages et alertes (phase 4)
+
+- **Lien personnel** : sur la fiche d'un dossier (ou pour toute la campagne), la gestion envoie au militaire un lien vers son espace (valable 60 jours ; un nouveau lien remplace l'ancien). À l'ouverture, il reçoit un **code à 6 chiffres** par email ou SMS, aux coordonnées de sa fiche : le lien seul ne suffit pas. Session de 2 heures, sans mot de passe.
+- **Formulaire guidé** (téléphone, connexion faible) : sa fiche seulement, par étapes courtes, enregistrée en quittant chaque champ ; dépôt des pièces avec contrôle immédiat du format ; envoi à la DGRECM, après quoi la fiche n'est plus modifiable sauf renvoi par un gestionnaire (avec le motif, envoyé au militaire). Les réponses communes de la campagne et les questions sensibles (profession, employeur, déclarations) restent à la DGRECM.
+- **Messages** : lien, code, rappels automatiques de la fiche (7, 3 et 1 jour(s) avant la date limite de la campagne, puis le lendemain), convocation au dépôt quand le rendez-vous est pris, rappel la veille, relance à la main. Email par le serveur SMTP de la DGSIC, SMS optionnels (passerelle HTTP). Sans configuration, en développement, les messages sont écrits dans le journal de l'API. L'historique de chaque dossier ne garde ni le lien ni le code.
+- **Suivi** : tableau de bord par campagne (statuts, retards, anomalies, liens envoyés, militaires connectés, messages en échec) et page **Alertes** : passeport expirant trop tôt, pièces manquantes, fiche à envoyer bientôt ou en retard, rendez-vous du lendemain, lien pas encore envoyé, message non parvenu.
 
 ## Extension pour les sites officiels (phases 2 et 3)
 

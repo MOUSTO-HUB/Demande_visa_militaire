@@ -15,8 +15,20 @@ export interface ChargeJeton {
   aActiver?: boolean;
 }
 
+/** Militaire connecté à son espace : un seul dossier, celui de son lien. */
+export interface MilitaireConnecte {
+  dossierId: string;
+}
+
+/** Jeton de l'espace du militaire (2 heures). */
+export interface ChargeJetonMilitaire {
+  sub: string; // dossier
+  typ: 'militaire';
+}
+
 export interface RequeteAuthentifiee extends Request {
   utilisateur?: UtilisateurConnecte;
+  militaire?: MilitaireConnecte;
 }
 
 export interface Session {

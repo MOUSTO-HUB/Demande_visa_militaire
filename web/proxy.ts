@@ -86,6 +86,9 @@ async function rafraichir(jeton: string): Promise<Session | null> {
 }
 
 export const config = {
-  // Tout sauf les fichiers statiques de Next, les images et le moteur de lecture du passeport.
-  matcher: ['/((?!_next/static|_next/image|ocr/|.*\\.(?:png|svg|ico)$).*)'],
+  // Tout sauf les fichiers statiques de Next, les images, le moteur de lecture
+  // du passeport et l'espace du militaire (lien /m/…, pages /espace : sa propre session).
+  matcher: [
+    '/((?!_next/static|_next/image|ocr/|m/|espace(?:/|$)|.*\\.(?:png|svg|ico)$).*)',
+  ],
 };

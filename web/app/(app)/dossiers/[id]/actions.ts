@@ -7,6 +7,51 @@ import type { ResultatMrz, StatutDossier } from '@/lib/types';
 
 type Etat = EtatFormulaire | null;
 
+const CANAUX = { EMAIL: 'email', SMS: 'SMS' } as const;
+
+/**
+ * Crée (ou renouvelle) le lien personnel du militaire et le lui envoie. Le
+ * lien est montré à l'agent, qui peut aussi le transmettre lui-même : sans le
+ * code reçu par le militaire, il ne suffit pas.
+ */
+export async function creerLienAcces(id: string): Promise<Etat> {
+  let r: {
+    lien: string;
+    envoi: { canal: keyof typeof CANAUX; destinataire: string } | null;
+  } = { lien: '', envoi: null };
+  const erreur = await tenter(async () => {
+    r = await envoyerApi(`/dossiers/${id}/acces`, 'POST');
+  });
+  if (erreur) return erreur;
+  refresh();
+  return {
+    succes: `${r.envoi ? `Lien envoyé par ${CANAUX[r.envoi.canal]} à ${r.envoi.destinataire}.` : 'Lien créé.'} L'ancien lien ne fonctionne plus. Pour le transmettre vous-même (le code reste envoyé au militaire) : ${r.lien}`,
+  };
+}
+
+export async function envoyerMessageMilitaire(
+  id: string,
+  type: 'RAPPEL_FICHE' | 'CONVOCATION_DEPOT',
+): Promise<Etat> {
+  let r: {
+    canal?: keyof typeof CANAUX;
+    destinataire: string | null;
+    erreur: string | null;
+  } = {
+    destinataire: null,
+    erreur: null,
+  };
+  const erreur = await tenter(async () => {
+    r = await envoyerApi(`/dossiers/${id}/messages`, 'POST', { type });
+  });
+  if (erreur) return erreur;
+  refresh();
+  if (r.erreur) return { erreur: r.erreur };
+  return {
+    succes: `Message mis en file : ${r.canal ? CANAUX[r.canal] : ''} à ${r.destinataire}, envoyé dans la minute.`,
+  };
+}
+
 /**
  * Analyse, sans rien enregistrer, du texte reconnu sur la photo du passeport
  * (seul ce texte quitte le navigateur, jamais l'image).

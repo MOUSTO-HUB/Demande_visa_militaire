@@ -68,6 +68,29 @@ enum ActionAudit {
   SUPPRESSION
   RELEVE // champs d'un site officiel relevés par l'extension
   REMPLISSAGE // page d'un site officiel remplie par l'extension
+  MESSAGE // message envoyé à un militaire (lien, rappel, convocation)
+}
+
+/// Messages aux militaires (src/messages/modeles.ts).
+enum TypeMessage {
+  LIEN_ACCES // lien personnel vers l'espace du militaire
+  CODE_ACCES // code à usage unique (jamais conservé)
+  RAPPEL_FICHE // fiche à compléter avant la date limite
+  RENVOI_FICHE // fiche renvoyée par la DGRECM, avec le motif
+  CONVOCATION_DEPOT // rendez-vous de dépôt à l'ambassade
+  RAPPEL_RDV // rendez-vous du lendemain
+}
+
+enum CanalMessage {
+  EMAIL
+  SMS
+}
+
+enum StatutMessage {
+  A_ENVOYER
+  ENVOYE
+  SIMULE // aucun serveur d'envoi configuré (développement) : écrit dans le journal de l'API
+  ECHEC
 }
 
 /// D'où vient la valeur saisie dans un champ du site officiel.
@@ -136,6 +159,8 @@ model Campagne {
   referenceAccord   String?        @map("reference_accord") // note ou accord de bourse
   /// Valeurs par défaut des champs « DOSSIER » (établissement, dates, adresse, financement…).
   valeursCommunes   Json           @default("{}") @map("valeurs_communes")
+  /// Date avant laquelle les militaires doivent avoir envoyé leur fiche (rappels, alertes).
+  dateLimiteFiche   DateTime?      @map("date_limite_fiche") @db.Date
   /// Pièces exigées (codes de src/referentiel/pieces.ts) ; vide : celles du pays.
   piecesExigees     String[]       @default([]) @map("pieces_exigees")
   statut            StatutCampagne @default(OUVERTE)
@@ -197,6 +222,8 @@ model Dossier {
   operateur  Utilisateur?       @relation("OperateurDossier", fields: [operateurId], references: [id], onDelete: SetNull)
   pieces     Piece[]
   historique HistoriqueStatut[]
+  acces      AccesMilitaire?
+  messages   Message[]
 
   @@unique([campagneId, militaireId])
   @@index([campagneId, statut])
@@ -295,4 +322,58 @@ model ChampSite {
   @@unique([pays, page, cle])
   @@index([pays, page])
   @@map("champs_site")
+}
+
+// ─── Espace du militaire et messages ─────────────────────────────────────────
+
+/// Lien personnel du militaire vers son dossier (un par dossier, renouvelable).
+/// Le lien seul ne suffit pas : il faut aussi le code reçu par email ou SMS.
+model AccesMilitaire {
+  id                String    @id @default(uuid(7))
+  dossierId         String    @unique @map("dossier_id")
+  /// Empreinte SHA-256 du jeton du lien (recherche).
+  jetonHash         String    @unique @map("jeton_hash")
+  /// Jeton chiffré (securite/chiffrement.ts) : remis dans les rappels.
+  jetonChiffre      String    @map("jeton_chiffre")
+  expireLe          DateTime  @map("expire_le")
+  /// Code à usage unique en cours : empreinte, échéance, essais restants.
+  codeHash          String?   @map("code_hash")
+  codeExpireLe      DateTime? @map("code_expire_le")
+  codeEssais        Int       @default(0) @map("code_essais")
+  codeEnvoyeLe      DateTime? @map("code_envoye_le")
+  derniereConnexion DateTime? @map("derniere_connexion")
+  creeLe            DateTime  @default(now()) @map("cree_le")
+  modifieLe         DateTime  @updatedAt @map("modifie_le")
+  creePar           String?   @map("cree_par")
+
+  dossier Dossier @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+
+  @@map("acces_militaires")
+}
+
+/// Message à un militaire : file d'envoi et historique. Le texte est composé au
+/// moment de l'envoi ; seul un aperçu sans lien ni code est conservé.
+model Message {
+  id           String        @id @default(uuid(7))
+  dossierId    String        @map("dossier_id")
+  type         TypeMessage
+  canal        CanalMessage
+  destinataire String
+  /// Données du modèle (dates, motif), sans secret.
+  parametres   Json          @default("{}")
+  statut       StatutMessage @default(A_ENVOYER)
+  tentatives   Int           @default(0)
+  erreur       String?
+  apercu       String?
+  /// Rappels automatiques : un seul message par clé (ex. RAPPEL_FICHE:<dossier>:J-3).
+  cle          String?       @unique
+  envoyeLe     DateTime?     @map("envoye_le")
+  creeLe       DateTime      @default(now()) @map("cree_le")
+  creePar      String?       @map("cree_par")
+
+  dossier Dossier @relation(fields: [dossierId], references: [id], onDelete: Cascade)
+
+  @@index([statut, creeLe])
+  @@index([dossierId, creeLe])
+  @@map("messages")
 }

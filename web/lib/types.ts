@@ -83,6 +83,8 @@ export interface Campagne {
   typeVisa: string;
   referenceAccord: string | null;
   piecesExigees: string[];
+  /** Date limite des fiches (ISO), pour les rappels et alertes. */
+  dateLimiteFiche: string | null;
   statut: 'OUVERTE' | 'CLOSE';
   closeLe: string | null;
   dossiers: number;
@@ -364,4 +366,114 @@ export interface ResultatMrz {
     sexe: 'MASCULIN' | 'FEMININ' | null;
     passeportDateExpiration: string | null;
   };
+}
+
+// --- Espace du militaire, messages et suivi (phase 4) ---
+
+export type TypeMessage =
+  | 'LIEN_ACCES'
+  | 'CODE_ACCES'
+  | 'RAPPEL_FICHE'
+  | 'RENVOI_FICHE'
+  | 'CONVOCATION_DEPOT'
+  | 'RAPPEL_RDV';
+
+export const LIBELLES_TYPE_MESSAGE: Record<TypeMessage, string> = {
+  LIEN_ACCES: "Lien d'accès",
+  CODE_ACCES: 'Code de connexion',
+  RAPPEL_FICHE: 'Rappel : fiche à compléter',
+  RENVOI_FICHE: 'Fiche renvoyée pour correction',
+  CONVOCATION_DEPOT: 'Convocation au dépôt',
+  RAPPEL_RDV: 'Rappel du rendez-vous',
+};
+
+export type StatutMessage = 'A_ENVOYER' | 'ENVOYE' | 'SIMULE' | 'ECHEC';
+
+export const LIBELLES_STATUT_MESSAGE: Record<StatutMessage, string> = {
+  A_ENVOYER: 'En attente',
+  ENVOYE: 'Envoyé',
+  SIMULE: 'Simulé (pas de serveur d’envoi)',
+  ECHEC: 'Échec',
+};
+
+export interface MessageMilitaire {
+  id: string;
+  type: TypeMessage;
+  canal: 'EMAIL' | 'SMS';
+  destinataire: string;
+  statut: StatutMessage;
+  tentatives: number;
+  erreur: string | null;
+  apercu: string | null;
+  envoyeLe: string | null;
+  creeLe: string;
+}
+
+export interface EtatAcces {
+  acces: {
+    creeLe: string;
+    modifieLe: string;
+    expireLe: string;
+    derniereConnexion: string | null;
+  } | null;
+  messages: MessageMilitaire[];
+}
+
+export interface Alerte {
+  type: string;
+  niveau: 'URGENT' | 'ATTENTION';
+  message: string;
+  dossierId: string;
+  militaire: {
+    matricule: string;
+    grade?: string | null;
+    nom: string;
+    prenoms: string;
+  };
+  campagne?: { id: string; libelle: string };
+}
+
+export interface SuiviCampagne {
+  campagne: { id: string; libelle: string; dateLimiteFiche: string | null };
+  total: number;
+  parStatut: Record<StatutDossier, number>;
+  indicateurs: {
+    avecBloquants: number;
+    enRetard: number;
+    liensEnvoyes: number;
+    connectes: number;
+    messagesEnEchec: number;
+  };
+  alertes: Alerte[];
+}
+
+/** Fiche vue par le militaire dans son espace. */
+export interface FicheEspace {
+  statut: StatutDossier;
+  libelleStatut: string;
+  commentaire: string | null;
+  modifiable: boolean;
+  campagne: {
+    libelle: string;
+    pays: PaysAccueil;
+    dateLimiteFiche: string | null;
+  };
+  militaire: { grade: string | null; nom: string; prenoms: string };
+  numeroDemande: string | null;
+  dateRendezVous: string | null;
+  sections: {
+    code: string;
+    libelle: string;
+    champs: (DefinitionChamp & { valeur: string | null })[];
+    remplis: number;
+    obligatoiresManquants: number;
+  }[];
+  erreurs: Record<string, string>;
+  pieces: {
+    code: string;
+    libelle: string;
+    exigee: boolean;
+    deposee: { id: string; nomFichier: string; creeLe: string } | null;
+  }[];
+  reponsesObligatoiresManquantes: number;
 }

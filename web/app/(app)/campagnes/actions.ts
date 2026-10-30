@@ -20,7 +20,22 @@ const champsCampagne = (d: FormData) => ({
   typeVisa: texte(d, 'typeVisa'),
   referenceAccord: texte(d, 'referenceAccord'),
   piecesExigees: d.getAll('piecesExigees').map(String),
+  // Vide : pas de date limite (pas de rappel automatique).
+  dateLimiteFiche: texte(d, 'dateLimiteFiche') ?? null,
 });
+
+/** Liens d'accès pour tous les dossiers « à compléter » qui n'en ont pas encore. */
+export async function envoyerLiensCampagne(id: string): Promise<Etat> {
+  let resultat = { crees: 0, sansCoordonnees: 0 };
+  const erreur = await tenter(async () => {
+    resultat = await envoyerApi(`/campagnes/${id}/acces`, 'POST');
+  });
+  if (erreur) return erreur;
+  refresh();
+  return {
+    succes: `${resultat.crees} lien(s) d'accès envoyé(s).${resultat.sansCoordonnees ? ` ${resultat.sansCoordonnees} militaire(s) sans email ni téléphone : complétez leur fiche.` : ''}`,
+  };
+}
 
 export async function creerCampagne(_e: Etat, d: FormData): Promise<Etat> {
   let id = '';

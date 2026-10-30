@@ -17,7 +17,9 @@ import {
   Sexe,
   StatutCampagne,
   StatutDossier,
+  TypeMessage,
 } from '../generated/prisma/enums.js';
+import { MessagesService } from '../messages/messages.service.js';
 import { MESSAGE_MRZ_ILLISIBLE } from '../mrz/mrz.controller.js';
 import { lireMrz } from '../mrz/mrz.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -73,11 +75,38 @@ export function valeursFiche(m: DossierComplet['militaire']): Valeurs {
   };
 }
 
+/** Réponses effectives et anomalies (champs et pièces manquantes). */
+export function analyserDossier(dossier: DossierComplet) {
+  const { valeurs, origines } = fusionner(
+    valeursFiche(dossier.militaire),
+    lireValeurs(dossier.campagne.valeursCommunes),
+    lireValeurs(dossier.donnees),
+  );
+  const anomalies: Anomalie[] = controler(dossier.campagne.pays, valeurs);
+  const deposees = new Set(
+    dossier.pieces.filter((p) => !p.purgeeLe).map((p) => p.type),
+  );
+  for (const code of piecesDeCampagne(
+    dossier.campagne.pays,
+    dossier.campagne.piecesExigees,
+  ))
+    if (!deposees.has(code))
+      anomalies.push({
+        champ: null,
+        message: `Pièce manquante : ${PIECES.find((p) => p.code === code)?.libelle ?? code}.`,
+        niveau: 'BLOQUANT',
+      });
+  return { valeurs, origines, anomalies };
+}
+
+export type { DossierComplet };
+
 @Injectable()
 export class DossiersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly messages: MessagesService,
   ) {}
 
   async lister(
@@ -141,7 +170,8 @@ export class DossiersService {
     return page(elements, total, pagination);
   }
 
-  private async charger(id: string): Promise<DossierComplet> {
+  /** Dossier avec militaire, campagne et pièces (espace du militaire, suivi). */
+  async charger(id: string): Promise<DossierComplet> {
     const dossier = await this.prisma.dossier.findUnique({
       where: { id },
       include: INCLUSION,
@@ -150,28 +180,20 @@ export class DossiersService {
     return dossier;
   }
 
-  /** Réponses effectives et anomalies (champs et pièces manquantes). */
+  /** Dossiers d'une campagne, complets (tableau de bord et alertes). */
+  chargerCampagne(campagneId: string): Promise<DossierComplet[]> {
+    return this.prisma.dossier.findMany({
+      where: { campagneId },
+      include: INCLUSION,
+      orderBy: [
+        { militaire: { nom: 'asc' } },
+        { militaire: { prenoms: 'asc' } },
+      ],
+    });
+  }
+
   private analyser(dossier: DossierComplet) {
-    const { valeurs, origines } = fusionner(
-      valeursFiche(dossier.militaire),
-      lireValeurs(dossier.campagne.valeursCommunes),
-      lireValeurs(dossier.donnees),
-    );
-    const anomalies: Anomalie[] = controler(dossier.campagne.pays, valeurs);
-    const deposees = new Set(
-      dossier.pieces.filter((p) => !p.purgeeLe).map((p) => p.type),
-    );
-    for (const code of piecesDeCampagne(
-      dossier.campagne.pays,
-      dossier.campagne.piecesExigees,
-    ))
-      if (!deposees.has(code))
-        anomalies.push({
-          champ: null,
-          message: `Pièce manquante : ${PIECES.find((p) => p.code === code)?.libelle ?? code}.`,
-          niveau: 'BLOQUANT',
-        });
-    return { valeurs, origines, anomalies };
+    return analyserDossier(dossier);
   }
 
   async detail(u: UtilisateurConnecte, id: string) {
@@ -221,6 +243,20 @@ export class DossiersService {
   ) {
     const dossier = await this.charger(id);
     this.verifierModifiable(u, dossier);
+    await this.enregistrerReponses(u, dossier, saisie);
+    return this.detail(u, id);
+  }
+
+  /**
+   * Enregistrement sans contrôle des droits (fait par l'appelant) ; `u` null :
+   * le militaire dans son espace.
+   */
+  async enregistrerReponses(
+    u: UtilisateurConnecte | null,
+    dossier: DossierComplet,
+    saisie: Record<string, unknown>,
+  ): Promise<void> {
+    const id = dossier.id;
     const { colonnes, profil, dossier: propres, erreurs } = repartir(saisie);
     if (erreurs.length)
       throw new BadRequestException(erreurs.map((e) => e.message));
@@ -253,8 +289,8 @@ export class DossiersService {
     ]);
     await this.audit.journaliser(u, ActionAudit.MODIFICATION, 'Dossier', id, {
       champs: Object.keys(saisie),
+      ...(u ? {} : { par: 'MILITAIRE' }),
     });
-    return this.detail(u, id);
   }
 
   /** Lecture de la MRZ du passeport, puis enregistrement des valeurs si les contrôles sont justes. */
@@ -325,7 +361,37 @@ export class DossiersService {
       depuis: dossier.statut,
       vers: dto.statut,
     });
+    await this.prevenirMilitaire(dossier, dto, dateRendezVous);
     return this.detail(u, id);
+  }
+
+  /**
+   * Messages automatiques au militaire : convocation quand le rendez-vous est
+   * pris, motif quand la DGRECM lui renvoie sa fiche (s'il a un lien d'accès).
+   */
+  private async prevenirMilitaire(
+    dossier: DossierComplet,
+    dto: ChangementStatutDto,
+    dateRendezVous: Date | string | null | undefined,
+  ): Promise<void> {
+    if (dto.statut === StatutDossier.RDV_PRIS && dateRendezVous) {
+      const iso = new Date(dateRendezVous).toISOString();
+      await this.messages.enfiler(
+        dossier.id,
+        TypeMessage.CONVOCATION_DEPOT,
+        { dateRendezVous: iso },
+        { cle: `CONVOCATION_DEPOT:${dossier.id}:${iso}` },
+      );
+    }
+    if (
+      dto.statut === StatutDossier.A_COMPLETER &&
+      (await this.prisma.accesMilitaire.count({
+        where: { dossierId: dossier.id },
+      }))
+    )
+      await this.messages.enfiler(dossier.id, TypeMessage.RENVOI_FICHE, {
+        motif: dto.commentaire ?? '',
+      });
   }
 
   async attribuer(
@@ -391,6 +457,22 @@ export class DossiersService {
         dossier.statut === StatutDossier.A_VALIDER
           ? 'Le dossier attend la validation de la DGRECM : seule la gestion peut le corriger.'
           : 'Ce dossier est validé : il faut le rouvrir (retour « À compléter ») pour le modifier.',
+      );
+  }
+
+  /**
+   * Le militaire ne modifie sa fiche que tant qu'il ne l'a pas envoyée, ou
+   * quand la DGRECM la lui renvoie (cahier des charges, F3.4).
+   */
+  verifierModifiableParMilitaire(dossier: {
+    statut: StatutDossier;
+    campagne: { statut: StatutCampagne };
+  }): void {
+    if (dossier.campagne.statut === StatutCampagne.CLOSE)
+      throw new ConflictException('Cette campagne est close.');
+    if (dossier.statut !== StatutDossier.A_COMPLETER)
+      throw new ForbiddenException(
+        'Votre fiche a été envoyée à la DGRECM : elle ne peut plus être modifiée. Contactez la DGRECM pour une correction.',
       );
   }
 }

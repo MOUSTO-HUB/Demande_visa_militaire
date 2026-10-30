@@ -11,8 +11,12 @@ import { ipRequete } from '../securite/contexte-requete.js';
 export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * `utilisateur` null : action du militaire dans son espace (précisée dans
+   * les détails) ou du système (envoi automatique d'un message).
+   */
   async journaliser(
-    utilisateur: UtilisateurConnecte,
+    utilisateur: UtilisateurConnecte | null,
     action: ActionAudit,
     entite: string,
     entiteId?: string,
@@ -20,7 +24,7 @@ export class AuditService {
   ): Promise<void> {
     await this.prisma.journalAudit.create({
       data: {
-        utilisateurId: utilisateur.id,
+        utilisateurId: utilisateur?.id ?? null,
         action,
         entite,
         entiteId,

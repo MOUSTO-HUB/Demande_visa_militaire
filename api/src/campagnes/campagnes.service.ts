@@ -27,6 +27,21 @@ type Compteurs = Partial<Record<StatutDossier, number>>;
 
 const total = (c: Compteurs) => Object.values(c).reduce((a, b) => a + b, 0);
 
+/** « AAAA-MM-JJ » de la date limite → date en base. */
+function versDonnees<T extends { dateLimiteFiche?: string | null }>(dto: T) {
+  const { dateLimiteFiche, ...reste } = dto;
+  return {
+    ...reste,
+    ...(dateLimiteFiche === undefined
+      ? {}
+      : {
+          dateLimiteFiche: dateLimiteFiche
+            ? new Date(`${dateLimiteFiche}T00:00:00Z`)
+            : null,
+        }),
+  };
+}
+
 @Injectable()
 export class CampagnesService {
   constructor(
@@ -77,7 +92,7 @@ export class CampagnesService {
 
   async creer(u: UtilisateurConnecte, dto: CreationCampagneDto) {
     const cree = await this.prisma.campagne.create({
-      data: { ...dto, creePar: u.id },
+      data: { ...versDonnees(dto), creePar: u.id },
     });
     await this.audit.journaliser(u, ActionAudit.CREATION, 'Campagne', cree.id);
     return this.detail(cree.id);
@@ -98,7 +113,10 @@ export class CampagnesService {
           'La campagne a déjà des dossiers : son pays ne peut plus changer.',
         );
     }
-    await this.prisma.campagne.update({ where: { id }, data: dto });
+    await this.prisma.campagne.update({
+      where: { id },
+      data: versDonnees(dto),
+    });
     await this.audit.journaliser(u, ActionAudit.MODIFICATION, 'Campagne', id, {
       ...dto,
     });

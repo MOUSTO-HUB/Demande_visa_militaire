@@ -7,8 +7,13 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import type { ChargeJeton, RequeteAuthentifiee } from '../auth.types.js';
+import type {
+  ChargeJeton,
+  ChargeJetonMilitaire,
+  RequeteAuthentifiee,
+} from '../auth.types.js';
 import { CLE_AVANT_DOUBLE_AUTH } from '../decorators/avant-double-auth.decorator.js';
+import { CLE_ESPACE_MILITAIRE } from '../decorators/espace-militaire.decorator.js';
 import { CLE_PUBLIC } from '../decorators/public.decorator.js';
 
 export const MESSAGE_DOUBLE_AUTH_A_ACTIVER =
@@ -35,17 +40,37 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException("Jeton d'accès manquant.");
     }
 
-    let charge: ChargeJeton;
+    let charge: ChargeJeton | ChargeJetonMilitaire;
     try {
-      charge = await this.jwt.verifyAsync<ChargeJeton>(jeton);
+      charge = await this.jwt.verifyAsync<ChargeJeton | ChargeJetonMilitaire>(
+        jeton,
+      );
     } catch {
       throw new UnauthorizedException("Jeton d'accès invalide ou expiré.");
+    }
+
+    // Espace du militaire et routes des agents : jamais le jeton de l'un chez l'autre.
+    const espace =
+      this.reflector.getAllAndOverride<boolean>(CLE_ESPACE_MILITAIRE, [
+        ctx.getHandler(),
+        ctx.getClass(),
+      ]) ?? false;
+    const militaire = 'typ' in charge && charge.typ === 'militaire';
+    if (espace !== militaire)
+      throw new ForbiddenException(
+        espace
+          ? 'Cette page est réservée au militaire, par son lien personnel.'
+          : 'Votre accès est limité à votre propre fiche.',
+      );
+    if (militaire) {
+      requete.militaire = { dossierId: charge.sub };
+      return true;
     }
 
     // Double authentification obligatoire pas encore activée : seules les
     // routes de profil, de mot de passe et d'activation restent ouvertes.
     if (
-      charge.aActiver &&
+      (charge as ChargeJeton).aActiver &&
       !this.reflector.getAllAndOverride<boolean>(CLE_AVANT_DOUBLE_AUTH, [
         ctx.getHandler(),
         ctx.getClass(),
@@ -53,7 +78,10 @@ export class JwtAuthGuard implements CanActivate {
     )
       throw new ForbiddenException(MESSAGE_DOUBLE_AUTH_A_ACTIVER);
 
-    requete.utilisateur = { id: charge.sub, role: charge.role };
+    requete.utilisateur = {
+      id: charge.sub,
+      role: (charge as ChargeJeton).role,
+    };
     return true;
   }
 }
