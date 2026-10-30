@@ -18,6 +18,7 @@ import { CHAMPS_PAR_ID } from '../referentiel/champs.js';
 import { appliquer, lireValeurs, repartir } from '../referentiel/donnees.js';
 import { piecesDeCampagne } from '../referentiel/pieces.js';
 import { StockageService } from '../stockage/stockage.service.js';
+import { datePurge, moisConservation } from './conservation.regles.js';
 import type {
   CreationCampagneDto,
   ModificationCampagneDto,
@@ -87,6 +88,13 @@ export class CampagnesService {
       pieces: piecesDeCampagne(campagne.pays, campagne.piecesExigees),
       dossiers: total(parStatut),
       parStatut,
+      // Campagne close : date d'effacement automatique des pièces (7.4).
+      purgePrevueLe: campagne.closeLe
+        ? datePurge(
+            campagne.closeLe,
+            moisConservation(process.env.CONSERVATION_MOIS),
+          )
+        : null,
     };
   }
 
@@ -181,24 +189,21 @@ export class CampagnesService {
     });
     if (existants !== uniques.length)
       throw new NotFoundException('Un des militaires est introuvable.');
-    const { count } = await this.prisma.dossier.createMany({
+    const crees = await this.prisma.dossier.createManyAndReturn({
       data: uniques.map((militaireId) => ({
         campagneId: id,
         militaireId,
         creePar: u.id,
       })),
       skipDuplicates: true,
+      select: { id: true },
     });
-    await this.audit.journaliser(
-      u,
-      ActionAudit.CREATION,
-      'Dossier',
-      undefined,
-      {
+    const count = crees.length;
+    // Une entrée par dossier : le journal d'un dossier commence à sa création.
+    for (const d of crees)
+      await this.audit.journaliser(u, ActionAudit.CREATION, 'Dossier', d.id, {
         campagneId: id,
-        ajoutes: count,
-      },
-    );
+      });
     return { ajoutes: count, dejaPresents: uniques.length - count };
   }
 
@@ -259,7 +264,8 @@ export class CampagnesService {
    * Efface les fichiers des pièces d'une campagne close (cahier des charges, 7.4) ;
    * la liste des pièces reste, marquée « purgée ».
    */
-  async purgerPieces(u: UtilisateurConnecte, id: string) {
+  /** `u` null : effacement automatique (ConservationService). */
+  async purgerPieces(u: UtilisateurConnecte | null, id: string) {
     const campagne = await this.existante(id);
     if (campagne.statut !== StatutCampagne.CLOSE)
       throw new BadRequestException(
@@ -276,6 +282,7 @@ export class CampagnesService {
     });
     await this.audit.journaliser(u, ActionAudit.SUPPRESSION, 'Campagne', id, {
       piecesPurgees: pieces.length,
+      ...(u ? {} : { automatique: true }),
     });
     return { piecesPurgees: pieces.length };
   }

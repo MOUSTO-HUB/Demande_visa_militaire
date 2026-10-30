@@ -213,6 +213,9 @@ model Dossier {
   numeroDemande  String?       @map("numero_demande") // attribué par le site officiel
   dateRendezVous DateTime?     @map("date_rendez_vous")
   commentaire    String? // motif du renvoi, remarque de la DGRECM
+  /// Information du militaire acceptée dans son espace (cahier des charges, 7.7) : date et version du texte.
+  consentementLe      DateTime? @map("consentement_le")
+  consentementVersion String?   @map("consentement_version")
   creeLe         DateTime      @default(now()) @map("cree_le")
   modifieLe      DateTime      @updatedAt @map("modifie_le")
   creePar        String?       @map("cree_par")

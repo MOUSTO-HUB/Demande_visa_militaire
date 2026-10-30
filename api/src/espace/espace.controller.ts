@@ -25,6 +25,7 @@ import { Limiteur } from '../securite/limiteur.js';
 import { AccesService } from './acces.service.js';
 import {
   ConnexionEspaceDto,
+  ConsentementDto,
   DemandeCodeDto,
   LienDto,
   PieceEspaceDto,
@@ -79,6 +80,18 @@ export class EspaceController {
   @Get('dossier')
   lire(@MilitaireCourant() m: MilitaireConnecte) {
     return this.espace.lire(m.dossierId);
+  }
+
+  /** Information sur l'utilisation des données, acceptée avant toute saisie. */
+  @EspaceMilitaire()
+  @ApiBearerAuth()
+  @Post('consentement')
+  @HttpCode(200)
+  accepter(
+    @MilitaireCourant() m: MilitaireConnecte,
+    @Body() dto: ConsentementDto,
+  ) {
+    return this.espace.accepterConsentement(m.dossierId, dto.version);
   }
 
   /** Réponses du militaire (une seule pour l'enregistrement au fil de la saisie). */

@@ -1,4 +1,4 @@
-import { IsIn, IsObject, IsString, Matches } from 'class-validator';
+import { IsIn, IsObject, IsString, Matches, MaxLength } from 'class-validator';
 import { CanalMessage } from '../generated/prisma/enums.js';
 import { CODES_PIECES, type CodePiece } from '../referentiel/pieces.js';
 
@@ -36,4 +36,11 @@ export class MessageManuelDto {
     message: 'Message inconnu.',
   })
   type: 'RAPPEL_FICHE' | 'CONVOCATION_DEPOT';
+}
+
+export class ConsentementDto {
+  /** Version du texte lu (refusée si le texte a changé entre-temps). */
+  @IsString()
+  @MaxLength(20)
+  version: string;
 }

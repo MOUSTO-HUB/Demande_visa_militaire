@@ -1,0 +1,18 @@
+# Jamais dans les images : dépendances locales, constructions, secrets, données.
+**/node_modules
+**/dist
+**/.next
+**/coverage
+**/*.tsbuildinfo
+.git
+.github
+.env
+.env.*
+!.env.example
+api/src/generated
+api/stockage
+web/public/ocr
+sauvegardes
+extension/dist
+docs
+Help

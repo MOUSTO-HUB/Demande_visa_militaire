@@ -1,3 +1,4 @@
+# Les scripts de deploy/ s’exécutent dans des conteneurs Linux : LF obligatoire (règle ci-dessous).
 * text=auto eol=lf
 *.png binary
 *.jpg binary

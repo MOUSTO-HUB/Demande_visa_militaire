@@ -68,3 +68,24 @@ jobs:
 
       - name: Build extension
         run: pnpm --filter @visa/extension build
+
+  images:
+    name: Images Docker de production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Image de l'API
+        run: docker build -f api/Dockerfile -t visa-api .
+
+      - name: Image du site
+        run: docker build -f web/Dockerfile -t visa-web .
+
+      - name: Image de sauvegarde
+        run: docker build -t visa-sauvegarde deploy/sauvegarde
+
+      - name: Configuration de production
+        run: |
+          cp deploy/env.production.exemple .env.production
+          docker compose -f docker-compose.prod.yml --env-file .env.production config --quiet

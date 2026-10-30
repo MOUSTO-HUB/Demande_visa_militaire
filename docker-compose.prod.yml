@@ -1,0 +1,100 @@
+# Production sur le serveur de la DGSIC : voir docs/DEPLOIEMENT.md.
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+# Seul Caddy (ports 80 et 443) est joignable ; la base, l'API et le site restent sur le
+# réseau interne de Docker.
+name: demande_visa_prod
+
+x-journaux: &journaux
+  logging:
+    driver: json-file
+    options: { max-size: '10m', max-file: '5' }
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    <<: *journaux
+
+  api:
+    build: { context: ., dockerfile: api/Dockerfile }
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+      API_PORT: '3200'
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      STOCKAGE_DIR: /donnees/stockage
+      WEB_ORIGIN: https://${DOMAINE}
+      ESPACE_URL: ${ESPACE_URL:-https://${DOMAINE}}
+    volumes:
+      - stockage:/donnees/stockage
+    depends_on:
+      postgres: { condition: service_healthy }
+    <<: *journaux
+
+  web:
+    build: { context: ., dockerfile: web/Dockerfile }
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_URL: http://api:3200/api
+    depends_on:
+      api: { condition: service_healthy }
+    <<: *journaux
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '${PORT_HTTP:-80}:80'
+      - '${PORT_HTTPS:-443}:443'
+    environment:
+      DOMAINE: ${DOMAINE}
+      CADDY_TLS: ${CADDY_TLS:-internal}
+      RESEAUX_AUTORISES: ${RESEAUX_AUTORISES:-}
+      DOMAINE_ESPACE: ${DOMAINE_ESPACE:-}
+      CADDY_TLS_ESPACE: ${CADDY_TLS_ESPACE:-internal}
+    volumes:
+      - ./deploy/caddy:/etc/caddy:ro
+      # Certificats de la PKI de la DGSIC, si CADDY_TLS les désigne.
+      - ./deploy/certificats:/certificats:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [api, web]
+    <<: *journaux
+
+  # Sauvegarde chiffrée quotidienne de la base et des pièces (deploy/sauvegarde).
+  sauvegarde:
+    build: { context: deploy/sauvegarde }
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      SAUVEGARDE_PHRASE: ${SAUVEGARDE_PHRASE}
+      SAUVEGARDE_HEURE: ${SAUVEGARDE_HEURE:-02}
+      SAUVEGARDE_JOURS: ${SAUVEGARDE_JOURS:-30}
+    volumes:
+      - ./sauvegardes:/sauvegardes
+      - stockage:/donnees/stockage:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+    <<: *journaux
+
+volumes:
+  postgres_data:
+  stockage:
+  caddy_data:
+  caddy_config:

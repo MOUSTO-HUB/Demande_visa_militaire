@@ -94,6 +94,8 @@ export interface Campagne {
 export interface CampagneDetail extends Campagne {
   valeursCommunes: Record<string, string>;
   pieces: string[];
+  /** Campagne close : effacement automatique des pièces (clôture + 6 mois). */
+  purgePrevueLe: string | null;
 }
 
 // --- Militaires ---
@@ -453,6 +455,8 @@ export interface FicheEspace {
   libelleStatut: string;
   commentaire: string | null;
   modifiable: boolean;
+  /** Information sur l'utilisation des données, à accepter avant toute saisie. */
+  consentement: { accepte: boolean; version: string; texte: string[] };
   campagne: {
     libelle: string;
     pays: PaysAccueil;

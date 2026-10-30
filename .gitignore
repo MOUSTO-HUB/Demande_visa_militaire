@@ -17,3 +17,9 @@ api/src/generated/
 api/stockage/
 sauvegardes/
 web/public/ocr/
+
+# Production
+.env.production
+deploy/certificats/*
+!deploy/certificats/LISEZMOI.txt
+deploy/caddy/sites/*.caddy

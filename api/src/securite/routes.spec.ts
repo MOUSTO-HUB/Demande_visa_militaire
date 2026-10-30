@@ -166,6 +166,7 @@ describe('droits des routes', () => {
     expect(espace.map((r) => r.route).sort()).toEqual([
       'DELETE /espace/pieces/:id',
       'GET /espace/dossier',
+      'POST /espace/consentement',
       'POST /espace/envoi',
       'POST /espace/pieces',
       'PUT /espace/donnees',

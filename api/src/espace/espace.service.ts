@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { AuditService } from '../audit/audit.service.js';
 import {
   analyserDossier,
@@ -19,6 +23,9 @@ import {
   IDS_CHAMPS_MILITAIRE,
   piecesDuMilitaire,
 } from './champs-militaire.js';
+import { TEXTE_CONSENTEMENT, VERSION_CONSENTEMENT } from './consentement.js';
+
+type Consentement = { consentementVersion: string | null };
 
 /**
  * Espace du militaire (cahier des charges, 5.3) : sa fiche seulement, par
@@ -63,6 +70,12 @@ export class EspaceService {
       commentaire:
         d.statut === StatutDossier.A_COMPLETER ? d.commentaire : null,
       modifiable,
+      // Information à accepter avant toute saisie (7.7).
+      consentement: {
+        accepte: d.consentementVersion === VERSION_CONSENTEMENT,
+        version: VERSION_CONSENTEMENT,
+        texte: TEXTE_CONSENTEMENT,
+      },
       campagne: {
         libelle: d.campagne.libelle,
         pays,
@@ -108,6 +121,7 @@ export class EspaceService {
         `Question non modifiable dans votre espace : ${interdits.join(', ')}.`,
       );
     const d = await this.dossiers.charger(dossierId);
+    this.verifierConsentement(d);
     this.dossiers.verifierModifiableParMilitaire(d);
     await this.dossiers.enregistrerReponses(null, d, saisie);
     return this.lire(dossierId);
@@ -119,6 +133,7 @@ export class EspaceService {
     fichier: { buffer: Buffer; originalname: string },
   ) {
     const d = await this.dossiers.charger(dossierId);
+    this.verifierConsentement(d);
     if (
       !piecesDuMilitaire(d.campagne.pays, d.campagne.piecesExigees).some(
         (p) => p.code === type,
@@ -134,8 +149,39 @@ export class EspaceService {
     return { avertissements };
   }
 
-  supprimerPiece(dossierId: string, pieceId: string) {
+  async supprimerPiece(dossierId: string, pieceId: string) {
+    this.verifierConsentement(await this.dossiers.charger(dossierId));
     return this.pieces.supprimer(null, pieceId, dossierId);
+  }
+
+  /** Le militaire accepte l'information sur l'utilisation de ses données (7.7). */
+  async accepterConsentement(dossierId: string, version: string) {
+    if (version !== VERSION_CONSENTEMENT)
+      throw new BadRequestException(
+        'Le texte a changé entre-temps : rechargez la page pour le lire.',
+      );
+    await this.prisma.dossier.update({
+      where: { id: dossierId },
+      data: {
+        consentementLe: new Date(),
+        consentementVersion: VERSION_CONSENTEMENT,
+      },
+    });
+    await this.audit.journaliser(
+      null,
+      ActionAudit.MODIFICATION,
+      'Dossier',
+      dossierId,
+      { consentement: VERSION_CONSENTEMENT, par: 'MILITAIRE' },
+    );
+    return this.lire(dossierId);
+  }
+
+  private verifierConsentement(d: Consentement): void {
+    if (d.consentementVersion !== VERSION_CONSENTEMENT)
+      throw new ForbiddenException(
+        'Lisez et acceptez d’abord l’information sur l’utilisation de vos données.',
+      );
   }
 
   /**
@@ -145,6 +191,7 @@ export class EspaceService {
    */
   async envoyer(dossierId: string) {
     const d = await this.dossiers.charger(dossierId);
+    this.verifierConsentement(d);
     this.dossiers.verifierModifiableParMilitaire(d);
     const { reponsesObligatoiresManquantes, erreurs } =
       await this.lire(dossierId);

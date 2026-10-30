@@ -2,7 +2,14 @@
 
 Plateforme interne DGRECM/DGSIC : préparation et suivi des demandes de visa d'études des militaires boursiers (Chine : COVA, Russie : kdmid).
 
-Spécifications et coûts : `docs/CAHIER_DES_CHARGES.md`.
+Spécifications et coûts : `docs/CAHIER_DES_CHARGES.md`. Mise en service : `docs/DEPLOIEMENT.md`, recette : `docs/RECETTE.md`, formation : `docs/GUIDE_AGENTS.md`, `docs/GUIDE_MILITAIRE.md`.
+
+## Production
+
+- `docker-compose.prod.yml` : Caddy (seul exposé ; agents limités aux adresses internes, `deploy/caddy/Caddyfile`), site, API, PostgreSQL, sauvegarde chiffrée (`deploy/sauvegarde`). Images : `api/Dockerfile` (migrations au démarrage), `web/Dockerfile` (Next standalone). Configuration : `deploy/env.production.exemple` → `.env.production` (jamais versionné).
+- Espace du militaire sur Internet : facultatif, `deploy/caddy/sites/espace-internet.caddy.exemple` (seulement `/m/…` et `/espace`). Une nouvelle page publique du militaire doit y être ajoutée, et exclue du `matcher` de `web/proxy.ts`.
+- Pièces effacées automatiquement à la clôture + `CONSERVATION_MOIS` (`campagnes/conservation.service.ts`, règles dans `conservation.regles.ts`). Consentement du militaire : `espace/consentement.ts` (changer `VERSION_CONSENTEMENT` si le texte change).
+- Scripts `*.sh` en fins de ligne LF (`.gitattributes`).
 
 ## Stack
 

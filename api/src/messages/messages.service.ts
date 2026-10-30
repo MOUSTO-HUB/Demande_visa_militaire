@@ -232,7 +232,7 @@ export class MessagesService {
         sujet,
         texte,
       );
-      await this.prisma.message.update({
+      const { dossierId } = await this.prisma.message.update({
         where: { id },
         data: {
           statut: resultat,
@@ -240,8 +240,10 @@ export class MessagesService {
           erreur: null,
           apercu: apercu(texte, donnees),
         },
+        select: { dossierId: true },
       });
       await this.audit.journaliser(null, ActionAudit.MESSAGE, 'Message', id, {
+        dossierId,
         type,
         canal: destination.canal,
         statut: resultat,

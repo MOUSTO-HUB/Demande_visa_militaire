@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { ChampsEspace } from '@/components/champs-espace';
 import { FormulaireAction } from '@/components/formulaire-action';
 import { styles } from '@/components/ui';
@@ -16,6 +16,8 @@ export default async function EtapeEspace(
 ) {
   const { code } = await props.params;
   const fiche = await lireEspace<FicheEspace>('/espace/dossier');
+  // L'information sur les données s'accepte d'abord, sur l'accueil.
+  if (!fiche.consentement.accepte) redirect('/espace');
   const index = fiche.sections.findIndex((s) => s.code === code);
   if (index === -1) notFound();
   const section = fiche.sections[index];

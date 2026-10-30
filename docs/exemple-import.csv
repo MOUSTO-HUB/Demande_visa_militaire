@@ -1,0 +1,11 @@
+Matricule;Grade;Nom;Prénoms;Sexe;Date de naissance;Unité;Téléphone;Email
+FORM0001;Lieutenant;ESSAI;Alpha;M;1998-03-05;Unité fictive A;621000101;essai.alpha@exemple.test
+FORM0002;Sous-lieutenant;ESSAI;Bintou;F;1999-07-21;Unité fictive A;621000102;essai.bintou@exemple.test
+FORM0003;Sergent;ESSAI;Cheick;M;2000-01-15;Unité fictive B;621000103;
+FORM0004;Lieutenant;ESSAI;Djénabou;F;1997-11-30;Unité fictive B;;essai.djenabou@exemple.test
+FORM0005;Capitaine;ESSAI;Elhadj;M;1995-05-09;Unité fictive C;621000105;essai.elhadj@exemple.test
+FORM0006;Sergent;ESSAI;Fanta;F;2001-02-28;Unité fictive C;621000106;essai.fanta@exemple.test
+FORM0007;Lieutenant;ESSAI;Gando;M;1998-08-17;Unité fictive A;621000107;essai.gando@exemple.test
+FORM0008;Sous-lieutenant;ESSAI;Hawa;F;1999-12-03;Unité fictive B;621000108;essai.hawa@exemple.test
+FORM0008;Sergent;ESSAI;Ibrahima;M;2000-06-11;Unité fictive C;621000109;essai.ibrahima@exemple.test
+FORM0010;Lieutenant;ESSAI;Kadiatou;F;1998-02-31;Unité fictive A;621000110;essai.kadiatou@exemple.test

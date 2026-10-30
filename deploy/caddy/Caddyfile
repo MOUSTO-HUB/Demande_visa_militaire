@@ -1,0 +1,43 @@
+# Relais HTTPS du serveur de la DGSIC (docker-compose.prod.yml) : voir docs/DEPLOIEMENT.md.
+#
+# Certificat : CADDY_TLS
+#   - « internal » (par défaut) : autorité de certification interne de Caddy ; son
+#     certificat racine est à installer sur les postes (stratégie de groupe) ;
+#   - « /certificats/visa.crt /certificats/visa.key » : certificat de la PKI de la DGSIC ;
+#   - une adresse email : Let's Encrypt (seulement si le nom est public).
+{
+	# Pas de télémétrie ni de page d'administration exposée.
+	admin off
+}
+
+# Plateforme des agents (DGRECM, DGSIC) : réseau interne ou VPN seulement (cahier des charges, 7.1).
+{$DOMAINE} {
+	tls {$CADDY_TLS:internal}
+	encode zstd gzip
+
+	@exterieur not remote_ip private_ranges {$RESEAUX_AUTORISES:}
+	respond @exterieur "Accès réservé au réseau interne de la Défense." 403
+
+	# API : appels de l'extension « Remplisseur » (le site, lui, l'appelle en interne).
+	handle /api/* {
+		reverse_proxy api:3200
+	}
+
+	handle {
+		reverse_proxy web:3002
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+# Espace du militaire ouvert sur Internet : seulement si un fichier sites/*.caddy est
+# ajouté (modèle : espace-internet.caddy.exemple).
+import /etc/caddy/sites/*.caddy

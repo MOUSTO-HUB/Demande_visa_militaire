@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { FormulaireAction } from '@/components/formulaire-action';
 import { Badge, Carte, styles } from '@/components/ui';
 import { lireEspace } from '@/lib/espace';
@@ -14,6 +15,8 @@ export const metadata: Metadata = { title: 'Mes pièces · DGRECM' };
  */
 export default async function PiecesEspace() {
   const fiche = await lireEspace<FicheEspace>('/espace/dossier');
+  // L'information sur les données s'accepte d'abord, sur l'accueil.
+  if (!fiche.consentement.accepte) redirect('/espace');
   return (
     <div className="flex flex-col gap-4">
       <nav className="text-sm">

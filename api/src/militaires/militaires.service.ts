@@ -166,6 +166,7 @@ export class MilitairesService {
         })
       ).map((m) => m.matricule),
     );
+    const dossiersCrees: string[] = [];
     const rapport = {
       simulation: options.simulation,
       totalLignes: analyse.valides.length + analyse.erreurs.length,
@@ -203,7 +204,7 @@ export class MilitairesService {
             select: { id: true },
           });
           if (options.campagneId) {
-            const { count } = await tx.dossier.createMany({
+            const crees = await tx.dossier.createManyAndReturn({
               data: [
                 {
                   campagneId: options.campagneId,
@@ -212,8 +213,10 @@ export class MilitairesService {
                 },
               ],
               skipDuplicates: true,
+              select: { id: true },
             });
-            rapport.dossiersCrees += count;
+            rapport.dossiersCrees += crees.length;
+            dossiersCrees.push(...crees.map((d) => d.id));
           }
         }
       },
@@ -232,6 +235,11 @@ export class MilitairesService {
         dossiersCrees: rapport.dossiersCrees,
       },
     );
+    for (const id of dossiersCrees)
+      await this.audit.journaliser(u, ActionAudit.CREATION, 'Dossier', id, {
+        campagneId: options.campagneId,
+        import: fichier.originalname,
+      });
     return rapport;
   }
 }

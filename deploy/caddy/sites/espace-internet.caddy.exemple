@@ -1,0 +1,27 @@
+# Espace du militaire accessible depuis Internet (facultatif, cahier des charges 7.1) :
+# copier ce fichier en « espace-internet.caddy », renseigner DOMAINE_ESPACE et
+# ESPACE_URL=https://<DOMAINE_ESPACE> dans .env.production, puis redémarrer Caddy.
+# Seules les pages du militaire passent : jamais la plateforme des agents ni l'API.
+{$DOMAINE_ESPACE} {
+	tls {$CADDY_TLS_ESPACE:internal}
+	encode zstd gzip
+
+	@espace path /m/* /espace /espace/* /_next/static/* /icon.svg /apple-icon.png /favicon.ico
+	handle @espace {
+		reverse_proxy web:3002
+	}
+
+	handle {
+		respond "Page introuvable." 404
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

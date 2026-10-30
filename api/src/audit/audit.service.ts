@@ -40,8 +40,16 @@ export class AuditService {
   ) {
     const where: Prisma.JournalAuditWhereInput = {
       entite: filtre.entite,
-      entiteId: filtre.entiteId,
       utilisateurId: filtre.utilisateurId,
+      // Un dossier : aussi ses pièces et ses messages (détail « dossierId »).
+      ...(filtre.entiteId
+        ? {
+            OR: [
+              { entiteId: filtre.entiteId },
+              { details: { path: ['dossierId'], equals: filtre.entiteId } },
+            ],
+          }
+        : {}),
     };
     const [elements, total] = await this.prisma.$transaction([
       this.prisma.journalAudit.findMany({

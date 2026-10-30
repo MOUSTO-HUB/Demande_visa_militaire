@@ -106,6 +106,19 @@ export async function envoyerFiche(): Promise<Etat> {
   };
 }
 
+export async function accepterConsentement(version: string): Promise<Etat> {
+  try {
+    await appelEspace('/espace/consentement', {
+      method: 'POST',
+      body: JSON.stringify({ version }),
+    });
+  } catch (e) {
+    return message(e);
+  }
+  refresh();
+  return null;
+}
+
 export async function seDeconnecter(): Promise<void> {
   (await cookies()).delete(COOKIE_ESPACE);
   redirect('/espace/fin?sortie=1');

@@ -227,8 +227,13 @@ export default async function PageCampagne(
             ) : profil.role === 'ADMIN' ? (
               <>
                 <p className="mb-3 text-sm text-slate-700">
-                  Effacer les fichiers (scans de passeport, photos…) de cette
-                  campagne. La liste des pièces reste visible.
+                  Les fichiers (scans de passeport, photos…) seront effacés
+                  automatiquement
+                  {campagne.purgePrevueLe
+                    ? ` le ${dateFr(campagne.purgePrevueLe)}`
+                    : ''}
+                  . Pour les effacer dès maintenant (la liste des pièces reste
+                  visible) :
                 </p>
                 <FormulaireAction
                   action={purgerPieces.bind(null, id)}
@@ -239,7 +244,12 @@ export default async function PageCampagne(
               </>
             ) : (
               <p className="text-sm text-slate-700">
-                Campagne close. L’effacement des pièces est fait par la DGSIC.
+                Campagne close. Les fichiers des pièces seront effacés
+                automatiquement
+                {campagne.purgePrevueLe
+                  ? ` le ${dateFr(campagne.purgePrevueLe)}`
+                  : ''}
+                .
               </p>
             )}
           </Carte>

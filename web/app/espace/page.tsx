@@ -4,7 +4,7 @@ import { FormulaireAction } from '@/components/formulaire-action';
 import { Alerte, Badge, Carte } from '@/components/ui';
 import { lireEspace } from '@/lib/espace';
 import { dateFr, dateHeureFr, type FicheEspace } from '@/lib/types';
-import { envoyerFiche } from './actions';
+import { accepterConsentement, envoyerFiche } from './actions';
 
 export const metadata: Metadata = { title: 'Ma demande de visa · DGRECM' };
 
@@ -15,6 +15,31 @@ export default async function AccueilEspace() {
     (p) => p.exigee && !p.deposee,
   ).length;
   const qui = `${fiche.militaire.grade ? `${fiche.militaire.grade} ` : ''}${fiche.militaire.prenoms} ${fiche.militaire.nom}`;
+
+  // Première connexion : l'information sur les données, avant toute saisie (7.7).
+  if (!fiche.consentement.accepte)
+    return (
+      <div className="flex flex-col gap-4">
+        <h1 className="text-lg font-bold text-marque-950">Bienvenue, {qui}</h1>
+        <Carte titre="Avant de commencer : vos données">
+          <div className="flex flex-col gap-3 text-sm text-slate-800">
+            {fiche.consentement.texte.map((paragraphe) => (
+              <p key={paragraphe}>{paragraphe}</p>
+            ))}
+          </div>
+          <div className="mt-4">
+            <FormulaireAction
+              action={accepterConsentement.bind(
+                null,
+                fiche.consentement.version,
+              )}
+              libelle="J’ai lu et j’accepte"
+              libelleEnCours="Enregistrement…"
+            />
+          </div>
+        </Carte>
+      </div>
+    );
 
   return (
     <div className="flex flex-col gap-4">
