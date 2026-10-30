@@ -16,7 +16,7 @@ Plateforme de préparation et de suivi des demandes de visa d'études des milita
 - **Campagnes** : une vague de boursiers vers un pays. Les réponses communes (établissement, dates, adresse, financement…) sont saisies **une seule fois** et reprises dans tous les dossiers.
 - **Import Excel ou CSV** de la liste de la DGRECM : vérification ligne par ligne, puis création des fiches et des dossiers.
 - **Fiche unique par militaire**, réutilisée d'une campagne à l'autre.
-- **Lecture de la MRZ du passeport** (lecteur MRZ ou saisie des deux lignes), avec contrôle des chiffres de contrôle.
+- **Lecture du passeport** : photo ou scan de la page d'identité (lu dans le navigateur, l'image n'est ni envoyée ni conservée), lecteur MRZ ou saisie des deux lignes. Les chiffres de contrôle sont vérifiés, les erreurs de lecture évidentes corrigées (0/O, « < » lu K ou L, caractère en trop) seulement quand une seule correction est possible ; l'agent vérifie l'aperçu, surtout le nom et les prénoms (sans chiffre de contrôle, comparés à ceux du dossier), avant d'enregistrer.
 - **Contrôles automatiques** : champs exigés par chaque site, écriture latine en majuscules, dates, validité du passeport 6 mois après le séjour, pièces manquantes.
 - **Pièces** : photos et scans mis automatiquement aux dimensions et au poids exigés par chaque site, chiffrés sur le disque.
 - **Statuts** : à compléter → à valider → validé → en saisie → soumis → rendez-vous → déposé → visa obtenu / refusé, avec historique.

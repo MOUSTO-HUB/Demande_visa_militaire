@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChampDossier, ValeursInitiales } from '@/components/champ-dossier';
 import { FormulaireAction } from '@/components/formulaire-action';
+import { LecturePasseport } from '@/components/lecture-passeport';
 import {
   Alerte,
   Badge,
@@ -33,6 +34,7 @@ import {
   changerStatut,
   deposerPiece,
   enregistrerDonnees,
+  analyserMrz,
   lirePasseport,
   supprimerPiece,
 } from './actions';
@@ -275,26 +277,14 @@ export default async function PageDossier(props: PageProps<'/dossiers/[id]'>) {
         {/* Lecture du passeport */}
         <Carte titre="Lire le passeport (MRZ)">
           {dossier.modifiable ? (
-            <FormulaireAction
+            <LecturePasseport
               action={lirePasseport.bind(null, id)}
-              libelle="Lire et remplir"
-              libelleEnCours="Lecture…"
-            >
-              <Champ
-                libelle="Les deux lignes en bas de la page d'identité"
-                aide="Avec un lecteur MRZ, cliquez dans la zone puis passez le passeport. Sinon, recopiez les deux lignes (44 caractères chacune)."
-              >
-                <Zone
-                  name="texte"
-                  rows={3}
-                  className="font-mono text-xs uppercase"
-                  placeholder={
-                    'P<GINNOM<<PRENOMS<<<<<<<<<<<<<<<<<<<<<<<<<<<\nR01234567GIN9001014M3106159<<<<<<<<<<<<<<04'
-                  }
-                  required
-                />
-              </Champ>
-            </FormulaireAction>
+              analyser={analyserMrz}
+              connus={{
+                nom: dossier.valeurs.nom,
+                prenoms: dossier.valeurs.prenoms,
+              }}
+            />
           ) : (
             <p className="text-sm text-slate-600">
               Le dossier n’est plus modifiable à cette étape.

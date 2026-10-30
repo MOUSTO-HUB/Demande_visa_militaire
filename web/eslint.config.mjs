@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // Moteur de lecture du passeport copié depuis node_modules (scripts/copier-ocr.mjs).
+    'public/ocr/**',
   ]),
 ]);
 

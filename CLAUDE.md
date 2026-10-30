@@ -26,6 +26,7 @@ Spécifications et coûts : `docs/CAHIER_DES_CHARGES.md`.
 - Toute saisie passe par `repartir()`/`normaliser()` (`referentiel/donnees.ts`) : majuscules latines sans accent pour les champs `latin`, dates `AAAA-MM-JJ`, téléphones E.164 (+224 par défaut).
 - Contrôles : `controler()` (même fichier) ; transitions de statut et droits par rôle : `dossiers/statuts.regles.ts`. Un dossier n'est modifiable qu'en `A_COMPLETER` (agents) ou `A_VALIDER` (gestion).
 - **Sincérité** : le système recopie les réponses validées, il ne propose ni ne modifie jamais une réponse pour tromper les autorités consulaires. Jamais de contournement de captcha ni de soumission automatique sur les sites officiels.
+- Passeport : analyse et corrections de la MRZ dans `api/src/mrz/mrz.ts` (`lireMrz` ; une correction n'est gardée que si une seule version passe les chiffres de contrôle). Photo lue **dans le navigateur** (`web/lib/ocr-passeport.ts`, `components/lecture-passeport.tsx`, Tesseract.js) : seul le texte reconnu part vers `POST /mrz/analyse`, jamais l'image. Moteur et modèle copiés dans `web/public/ocr` par `web/scripts/copier-ocr.mjs` (lancé par `dev` et `build`, non versionné, exclu de `proxy.ts`, du lint et du `no-store`) ; CSP : `'wasm-unsafe-eval'` et `worker-src 'self'`.
 - Exigences de format des pièces : `referentiel/pieces.ts` (valeurs à confirmer par le relevé de la phase 0). Préparation des images : `pieces/preparation.ts` (sharp).
 
 ## Sécurité

@@ -10,4 +10,5 @@ allowBuilds:
   esbuild: true
   prisma: true
   sharp: false
+  tesseract.js: false # message publicitaire (opencollective) seulement
   unrs-resolver: false

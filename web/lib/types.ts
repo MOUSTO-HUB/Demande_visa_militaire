@@ -342,3 +342,26 @@ export const LIBELLES_MODE: Record<ModeCorrespondance, string> = {
   FIXE: 'Valeur fixe',
   IGNORER: 'Ignorer',
 };
+
+/** Analyse de la MRZ par l'API (`POST /mrz/analyse`). */
+export interface ResultatMrz {
+  valide: boolean;
+  lignes: [string, string];
+  corrections: number;
+  controles: {
+    numero: boolean;
+    naissance: boolean;
+    expiration: boolean;
+    global: boolean;
+  };
+  champs: {
+    nom: string;
+    prenoms: string;
+    passeportNumero: string;
+    passeportPaysEmetteur: string;
+    nationalite: string;
+    dateNaissance: string | null;
+    sexe: 'MASCULIN' | 'FEMININ' | null;
+    passeportDateExpiration: string | null;
+  };
+}

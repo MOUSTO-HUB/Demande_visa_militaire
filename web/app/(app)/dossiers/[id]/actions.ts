@@ -2,10 +2,29 @@
 
 import { refresh } from 'next/cache';
 import { lireModifications } from '@/components/champ-dossier';
-import { envoyerApi, tenter, type EtatFormulaire } from '@/lib/api';
-import type { StatutDossier } from '@/lib/types';
+import { envoyerApi, ErreurApi, tenter, type EtatFormulaire } from '@/lib/api';
+import type { ResultatMrz, StatutDossier } from '@/lib/types';
 
 type Etat = EtatFormulaire | null;
+
+/**
+ * Analyse, sans rien enregistrer, du texte reconnu sur la photo du passeport
+ * (seul ce texte quitte le navigateur, jamais l'image).
+ */
+export async function analyserMrz(
+  texte: string,
+): Promise<{ resultat?: ResultatMrz; erreur?: string }> {
+  try {
+    return {
+      resultat: await envoyerApi<ResultatMrz>('/mrz/analyse', 'POST', {
+        texte: String(texte).slice(0, 400),
+      }),
+    };
+  } catch (e) {
+    if (e instanceof ErreurApi) return { erreur: e.message };
+    throw e;
+  }
+}
 
 const texte = (d: FormData, cle: string) => {
   const v = d.get(cle);

@@ -75,6 +75,91 @@ describe('lireMrz', () => {
     expect(r.controles.numero).toBe(false);
   });
 
+  it('corrige un sosie dans le numéro seulement sans ambiguïté', () => {
+    // « R0123456 » lu « RO123456 » : seule la variante 0 satisfait les deux contrôles.
+    const l2 = ligne2('R0123456', '980305', 'M', '310914');
+    const l1 = 'P<GINCAMARA<<MOUSSA<<<<<<<<<<<<<<<<<<<<<<<<<';
+    const r = lireMrz(`${l1}\n${l2.replace('R0', 'RO')}`, AUJOURDHUI)!;
+    expect(r.valide).toBe(true);
+    expect(r.champs.passeportNumero).toBe('R0123456');
+    expect(r.lignes[1]).toBe(l2);
+    expect(r.corrections).toBe(1);
+  });
+
+  it('reconnaît le séparateur « << » lu « <K< » et le remplissage lu « K »', () => {
+    // Lecture réelle d'une photo fictive : les chiffres de contrôle passent
+    // déjà (K compte comme « < »), seules les règles de remplissage corrigent.
+    const r = lireMrz(
+      'P<GINCAMARA<K<MOUSSA<<<<<<<<<<<<<<<<<<<<<<<<\nR0123456<0GIN9803053M3109144<<<<<<K<K<<<<<00',
+      AUJOURDHUI,
+    )!;
+    expect(r.valide).toBe(true);
+    expect(r.champs.nom).toBe('CAMARA');
+    expect(r.champs.prenoms).toBe('MOUSSA');
+    expect(r.lignes[1]).toBe(ligne2('R0123456', '980305', 'M', '310914'));
+  });
+
+  it('accepte une ligne 1 sans « P » ou raccourcie, avec un parasite au bout', () => {
+    const l2 = ligne2('R1100339', '000101', 'F', '320505');
+    const r = lireMrz(
+      `bruit\n<GINSOUMAH<<MARIAMALL<LLLLLLLLLLLLLLS\n${l2.slice(0, 28)}<<<<<<L<L<L<L<L<L<<L${l2.slice(-2)}`,
+      AUJOURDHUI,
+    )!;
+    expect(r.valide).toBe(true);
+    expect(r.lignes[0]).toMatch(/^P<GINSOUMAH<<MARIAMALL<+$/);
+    expect(r.lignes[1]).toBe(l2);
+  });
+
+  it('retire un caractère lu en trop dans la ligne 2 si une seule version est juste', () => {
+    const l2 = ligne2('R1100339', '000101', 'F', '320505');
+    const l1 = 'P<GINSOUMAH<<MARIAMA<<<<<<<<<<<<<<<<<<<<<<<<';
+    const enTrop = l2.replace('GIN000101', 'GIN0000101');
+    expect(enTrop).toHaveLength(45);
+    const r = lireMrz(`${l1}\n${enTrop}`, AUJOURDHUI)!;
+    expect(r.valide).toBe(true);
+    expect(r.lignes[1]).toBe(l2);
+    expect(r.champs.dateNaissance).toBe('2000-01-01');
+    // Lecture réelle d'une photo floue fictive : un « 0 » en trop et des « < »
+    // perdus (44 ou 43 caractères).
+    for (const lue of [
+      'R1100339<4GIN00001018F3205057<<<<<L<L<<LLL00',
+      'R1100339<4GIN00001018F3205057<<<<L<L<<LLL00',
+      // Retirer le « G » donnerait aussi une ligne juste (nationalité « INO ») :
+      // le pays émetteur de la ligne 1 départage.
+      'R1100339<4GINOO0O1018F3205057<<<<<L<L<<LLLL<<L<00',
+    ]) {
+      const floue = lireMrz(`${l1}\n${lue}`, AUJOURDHUI)!;
+      expect(floue.valide).toBe(true);
+      expect(floue.lignes[1]).toBe(l2);
+    }
+  });
+
+  it("n'invente pas un numéro : une erreur hors sosies reste signalée", () => {
+    const faux = SPECIMEN.replace('L898902C3', 'L898902C8');
+    expect(lireMrz(faux, AUJOURDHUI)?.valide).toBe(false);
+  });
+
+  it('remet le remplissage lu « LLLL » ou « KKKK » en fin de ligne 1', () => {
+    const l2 = ligne2('R0123456', '980305', 'M', '310914');
+    const r = lireMrz(
+      `P<GINDIALLO<<KALL<FATOUMATA<<<<<<<KKKKLLLLLL\n${l2}`,
+      AUJOURDHUI,
+    )!;
+    expect(r.champs.nom).toBe('DIALLO');
+    // « KALL » (un nom) est gardé ; seules les suites de remplissage changent.
+    expect(r.champs.prenoms).toBe('KALL FATOUMATA');
+    expect(r.lignes[0]).toBe('P<GINDIALLO<<KALL<FATOUMATA<<<<<<<<<<<<<<<<<');
+  });
+
+  it('rattrape un « < » perdu ou en trop dans la zone personnelle', () => {
+    const l2 = ligne2('R0123456', '980305', 'M', '310914');
+    const l1 = 'P<GINCAMARA<<MOUSSA<<<<<<<<<<<<<<<<<<<<<<<<<';
+    const court = l2.slice(0, 30) + l2.slice(31);
+    const long = l2.slice(0, 30) + '<' + l2.slice(30);
+    expect(lireMrz(`${l1}\n${court}`, AUJOURDHUI)?.valide).toBe(true);
+    expect(lireMrz(`${l1}\n${long}`, AUJOURDHUI)?.valide).toBe(true);
+  });
+
   it('ignore les espaces et les lignes parasites', () => {
     const texte = `Passeport\n${SPECIMEN.split('\n')[0].replace(/(.{10})/g, '$1 ')}\n${SPECIMEN.split('\n')[1]}\n`;
     expect(extraireLignes(texte)?.[0]).toBe(SPECIMEN.split('\n')[0]);

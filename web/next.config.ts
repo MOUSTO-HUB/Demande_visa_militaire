@@ -9,10 +9,12 @@ if (existsSync(envRacine)) process.loadEnvFile(envRacine);
 const PROD = process.env.NODE_ENV === 'production';
 
 // Le navigateur ne parle qu'au site lui-même (l'API est appelée côté serveur).
-// 'unsafe-inline' : scripts d'hydratation de Next ; 'unsafe-eval' : développement seulement.
+// 'unsafe-inline' : scripts d'hydratation de Next ; 'unsafe-eval' : développement seulement ;
+// 'wasm-unsafe-eval' : moteur de lecture du passeport (WebAssembly, servi par le site dans /ocr).
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${PROD ? '' : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${PROD ? '' : " 'unsafe-eval'"}`,
+  "worker-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
@@ -56,8 +58,14 @@ const nextConfig: NextConfig = {
       },
       {
         // Données personnelles : pages jamais gardées dans le cache du navigateur.
-        source: '/((?!_next/).*)',
+        source: '/((?!_next/|ocr/).*)',
         headers: [{ key: 'Cache-Control', value: 'no-store' }],
+      },
+      {
+        // Moteur de lecture du passeport (14 Mo, aucune donnée personnelle) :
+        // gardé une journée par le navigateur.
+        source: '/ocr/:fichier*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=86400' }],
       },
     ];
   },

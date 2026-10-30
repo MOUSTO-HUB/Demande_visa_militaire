@@ -16,3 +16,4 @@ Thumbs.db
 api/src/generated/
 api/stockage/
 sauvegardes/
+web/public/ocr/
