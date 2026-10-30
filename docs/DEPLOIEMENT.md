@@ -1,5 +1,7 @@
 # Déploiement et exploitation (DGSIC)
 
+> Installation sur Ubuntu, pas à pas et par un script : [DEPLOIEMENT_UBUNTU.md](DEPLOIEMENT_UBUNTU.md). Ce document-ci décrit la plateforme et son exploitation.
+
 Mise en service de la plateforme sur un serveur de la DGSIC, puis tâches courantes : mises à jour, sauvegardes, restauration, comptes, supervision. Cahier des charges : sections 7 (sécurité) et 8 (architecture).
 
 ## 1. Le serveur

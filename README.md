@@ -4,7 +4,7 @@ Plateforme de préparation et de suivi des demandes de visa d'études des milita
 
 - Spécifications et coûts : [docs/CAHIER_DES_CHARGES.md](docs/CAHIER_DES_CHARGES.md)
 - Phases livrées : **Phase 1** (base des dossiers, double authentification), **Phase 2** (extension pour le site chinois COVA), **Phase 3** (même extension pour le site russe kdmid, voir [extension/README.md](extension/README.md)), **Phase 4** (espace du militaire, messages, alertes et tableau de bord) et **Phase 5** (mise en production).
-- Mise en service : [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md) (installation, sauvegardes, restauration, exploitation), [docs/RECETTE.md](docs/RECETTE.md) (cahier de recette et procès-verbal), [docs/GUIDE_AGENTS.md](docs/GUIDE_AGENTS.md) (formation des agents), [docs/GUIDE_MILITAIRE.md](docs/GUIDE_MILITAIRE.md) (fiche à remettre aux boursiers).
+- Mise en service : [docs/DEPLOIEMENT_UBUNTU.md](docs/DEPLOIEMENT_UBUNTU.md) (installation sur Ubuntu par script), [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md) (installation, sauvegardes, restauration, exploitation), [docs/RECETTE.md](docs/RECETTE.md) (cahier de recette et procès-verbal), [docs/GUIDE_AGENTS.md](docs/GUIDE_AGENTS.md) (formation des agents), [docs/GUIDE_MILITAIRE.md](docs/GUIDE_MILITAIRE.md) (fiche à remettre aux boursiers).
 
 ## Espace du militaire, messages et alertes (phase 4)
 

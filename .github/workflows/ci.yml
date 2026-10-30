@@ -63,6 +63,10 @@ jobs:
       - name: Build API
         run: pnpm --filter @visa/api build
 
+      # API compilée, sur une base dédiée (demande_visa_e2e) : espace du militaire, cloisonnement.
+      - name: Tests de bout en bout
+        run: pnpm --filter @visa/api test:e2e
+
       - name: Build site
         run: pnpm --filter @visa/web build
 
