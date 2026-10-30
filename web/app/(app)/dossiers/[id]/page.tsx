@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ChampDossier, ValeursInitiales } from '@/components/champ-dossier';
 import { FormulaireAction } from '@/components/formulaire-action';
 import { LecturePasseport } from '@/components/lecture-passeport';
+import { RecadragePhoto } from '@/components/recadrage-photo';
 import {
   Alerte,
   Badge,
@@ -343,6 +344,22 @@ export default async function PageDossier(props: PageProps<'/dossiers/[id]'>) {
                             {tailleFr(p.taille)}
                             {p.largeur && ` · ${p.largeur}×${p.hauteur} px`}
                           </span>
+                          {p.conformite && (
+                            <span
+                              title={p.conformite.raisons.join(' ; ')}
+                              className="inline-flex"
+                            >
+                              <Badge
+                                couleur={
+                                  p.conformite.conforme ? 'vert' : 'rouge'
+                                }
+                              >
+                                {p.conformite.conforme
+                                  ? `conforme ${DRAPEAUX[pays]}`
+                                  : `non conforme : ${p.conformite.raisons.join(' ; ')}`}
+                              </Badge>
+                            </span>
+                          )}
                           {dossier.modifiable && (
                             <FormulaireAction
                               action={supprimerPiece.bind(null, p.id)}
@@ -369,13 +386,21 @@ export default async function PageDossier(props: PageProps<'/dossiers/[id]'>) {
                       reinitialiserSiSucces
                       className="mt-2 flex flex-wrap items-center gap-2"
                     >
-                      <input
-                        type="file"
-                        name="fichier"
-                        accept="image/jpeg,image/png,image/webp,application/pdf"
-                        className="max-w-full text-xs"
-                        required
-                      />
+                      {type === 'PHOTO' ? (
+                        // Recadrage assisté aux proportions du site (F5.1).
+                        <RecadragePhoto
+                          largeur={ref.exigences[pays].photo.largeur}
+                          hauteur={ref.exigences[pays].photo.hauteur}
+                        />
+                      ) : (
+                        <input
+                          type="file"
+                          name="fichier"
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
+                          className="max-w-full text-xs"
+                          required
+                        />
+                      )}
                     </FormulaireAction>
                   )}
                 </li>

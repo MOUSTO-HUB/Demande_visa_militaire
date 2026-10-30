@@ -14,6 +14,8 @@ import {
   StatutCampagne,
   StatutDossier,
 } from '../generated/prisma/enums.js';
+import { conformite } from '../parametres/exigences.regles.js';
+import { ParametresService } from '../parametres/parametres.service.js';
 import { PiecesService } from '../pieces/pieces.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { CodePiece } from '../referentiel/pieces.js';
@@ -38,12 +40,14 @@ export class EspaceService {
     private readonly dossiers: DossiersService,
     private readonly pieces: PiecesService,
     private readonly audit: AuditService,
+    private readonly parametres: ParametresService,
   ) {}
 
   async lire(dossierId: string) {
     const d = await this.dossiers.charger(dossierId);
     const { valeurs, anomalies } = analyserDossier(d);
     const pays = d.campagne.pays;
+    const exigences = await this.parametres.exigences(pays);
     const erreurs = Object.fromEntries(
       anomalies
         .filter((a) => a.champ && IDS_CHAMPS_MILITAIRE.has(a.champ))
@@ -100,10 +104,16 @@ export class EspaceService {
                 id: deposee.id,
                 nomFichier: deposee.nomFichier,
                 creeLe: deposee.creeLe,
+                conformite: conformite(deposee, exigences),
               }
             : null,
         };
       }),
+      // Cadre du recadrage de la photo (mêmes proportions que le site).
+      photo: {
+        largeur: exigences.photo.largeur,
+        hauteur: exigences.photo.hauteur,
+      },
       reponsesObligatoiresManquantes: sections.reduce(
         (n, s) => n + s.obligatoiresManquants,
         0,

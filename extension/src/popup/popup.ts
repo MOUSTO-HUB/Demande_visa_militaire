@@ -203,17 +203,14 @@ async function choisirDossier(id: string) {
 
 // ─── Page du site officiel ───────────────────────────────────────────────────
 
-async function relever() {
-  const page = await versPage<ReleveDePage>({ action: 'relever' });
-  if (!page.champs.length)
-    throw new Error('Aucun champ de formulaire visible sur cette page.');
-  const bilan = await envoyer<{
+/** Enregistre dans la plateforme les champs relevés sur la page (sans leur état « rempli »). */
+function enregistrerReleve(page: ReleveDePage) {
+  return envoyer<{
     nouveaux: number;
     obligatoires: number;
     obligatoiresSansCorrespondance: number;
   }>(`/sites/${site!.pays}/releves`, 'POST', {
     page: page.page,
-    // L'état « rempli » de la page n'est pas enregistré.
     champs: page.champs.map((c) => ({
       cle: c.cle,
       libelle: c.libelle,
@@ -223,6 +220,13 @@ async function relever() {
       formatDate: c.formatDate,
     })),
   });
+}
+
+async function relever() {
+  const page = await versPage<ReleveDePage>({ action: 'relever' });
+  if (!page.champs.length)
+    throw new Error('Aucun champ de formulaire visible sur cette page.');
+  const bilan = await enregistrerReleve(page);
   $('resultat').innerHTML = '';
   ajouterLigne(
     `${page.champs.length} champ(s) relevé(s) sur cette page, dont ${bilan.nouveaux} nouveau(x) et ${bilan.obligatoires} obligatoire(s).`,
@@ -295,11 +299,15 @@ async function remplir() {
       `Le choix « ${resultat.rechargement.cle} » recharge la page${resultat.rechargement.enAttente.length ? ` ; ${resultat.rechargement.enAttente.length} autre(s) choix de ce genre attendent` : ''} : une fois la page rechargée, cliquez de nouveau « Remplir cette page » (rien de déjà rempli n'est écrasé).`,
       'manquant',
     );
-  if (plan.nonReleves.length)
+  if (plan.nonReleves.length) {
+    // Champs inconnus : le site a changé. La page est relevée tout de suite,
+    // pour que la gestion relie ces champs (alerte dans la plateforme).
+    await enregistrerReleve(page);
     ajouterLigne(
-      `${plan.nonReleves.length} champ(s) jamais relevé(s) sur cette page : cliquez « Relever les champs de cette page ».`,
+      `${plan.nonReleves.length} nouveau(x) champ(s) sur cette page (le site a changé) : enregistré(s) pour la gestion (« ${site!.menu} »), à saisir vous-même en attendant.`,
       'manquant',
     );
+  }
 }
 
 function ajouterLigne(texte: string, classe: string) {

@@ -17,7 +17,9 @@ export type TypeAlerte =
   | 'FICHE_BIENTOT'
   | 'SANS_ACCES'
   | 'RDV'
-  | 'MESSAGE_ECHEC';
+  | 'MESSAGE_ECHEC'
+  /** Site officiel modifié : champs à relier (pas lié à un dossier). */
+  | 'SITE';
 
 export interface Alerte {
   type: TypeAlerte;

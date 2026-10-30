@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { FormulaireAction } from '@/components/formulaire-action';
+import { RecadragePhoto } from '@/components/recadrage-photo';
 import { Badge, Carte, styles } from '@/components/ui';
 import { lireEspace } from '@/lib/espace';
 import { dateFr, type FicheEspace } from '@/lib/types';
@@ -37,7 +38,13 @@ export default async function PiecesEspace() {
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <span className="font-medium text-marque-950">{p.libelle}</span>
             {p.deposee ? (
-              <Badge couleur="vert">déposée</Badge>
+              p.deposee.conformite.conforme ? (
+                <Badge couleur="vert">déposée, conforme</Badge>
+              ) : (
+                <Badge couleur="rouge">
+                  à refaire : {p.deposee.conformite.raisons.join(' ; ')}
+                </Badge>
+              )
             ) : p.exigee ? (
               <Badge couleur="orange">à déposer</Badge>
             ) : (
@@ -68,13 +75,21 @@ export default async function PiecesEspace() {
               className="flex flex-col gap-2 sm:flex-row sm:items-center"
             >
               <input type="hidden" name="type" value={p.code} />
-              <input
-                type="file"
-                name="fichier"
-                accept="image/*,application/pdf"
-                required
-                className="text-sm"
-              />
+              {p.code === 'PHOTO' ? (
+                // Recadrage assisté aux proportions du site (F5.1).
+                <RecadragePhoto
+                  largeur={fiche.photo.largeur}
+                  hauteur={fiche.photo.hauteur}
+                />
+              ) : (
+                <input
+                  type="file"
+                  name="fichier"
+                  accept="image/*,application/pdf"
+                  required
+                  className="text-sm"
+                />
+              )}
             </FormulaireAction>
           )}
         </Carte>

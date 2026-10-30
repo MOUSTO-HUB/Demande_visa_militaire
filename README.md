@@ -26,7 +26,7 @@ Plateforme de préparation et de suivi des demandes de visa d'études des milita
 - **Fiche unique par militaire**, réutilisée d'une campagne à l'autre.
 - **Lecture du passeport** : photo ou scan de la page d'identité (lu dans le navigateur, l'image n'est ni envoyée ni conservée), lecteur MRZ ou saisie des deux lignes. Les chiffres de contrôle sont vérifiés, les erreurs de lecture évidentes corrigées (0/O, « < » lu K ou L, caractère en trop) seulement quand une seule correction est possible ; l'agent vérifie l'aperçu, surtout le nom et les prénoms (sans chiffre de contrôle, comparés à ceux du dossier), avant d'enregistrer.
 - **Contrôles automatiques** : champs exigés par chaque site, écriture latine en majuscules, dates, validité du passeport 6 mois après le séjour, pièces manquantes.
-- **Pièces** : photos et scans mis automatiquement aux dimensions et au poids exigés par chaque site, chiffrés sur le disque.
+- **Pièces** : photo recadrée sur le visage par l'agent ou le militaire (cadre aux proportions du site), photos et scans mis automatiquement aux dimensions et au poids exigés par chaque site, chiffrés sur le disque ; indicateur « conforme / non conforme » par pièce. Les exigences de chaque site se règlent dans « Paramètres » (ADMIN) sans mise à jour du logiciel.
 - **Statuts** : à compléter → à valider → validé → en saisie → soumis → rendez-vous → déposé → visa obtenu / refusé, avec historique.
 - **Fiche récapitulative PDF**, export Excel par campagne, journal d'audit de toutes les consultations.
 

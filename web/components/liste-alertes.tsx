@@ -26,13 +26,23 @@ export function ListeAlertes({
             <Badge couleur={a.niveau === 'URGENT' ? 'rouge' : 'orange'}>
               {a.niveau === 'URGENT' ? 'Urgent' : 'À surveiller'}
             </Badge>
-            <Link
-              href={`/dossiers/${a.dossierId}`}
-              className="font-medium text-marque-800 hover:underline"
-            >
-              {a.militaire.grade ? `${a.militaire.grade} ` : ''}
-              {a.militaire.nom} {a.militaire.prenoms}
-            </Link>
+            {a.militaire ? (
+              <Link
+                href={`/dossiers/${a.dossierId}`}
+                className="font-medium text-marque-800 hover:underline"
+              >
+                {a.militaire.grade ? `${a.militaire.grade} ` : ''}
+                {a.militaire.nom} {a.militaire.prenoms}
+              </Link>
+            ) : (
+              // Site officiel modifié : vers ses correspondances.
+              <Link
+                href={a.lien ?? '/'}
+                className="font-medium text-marque-800 hover:underline"
+              >
+                Correspondances
+              </Link>
+            )}
             {avecCampagne && a.campagne && (
               <span className="text-xs text-slate-500">
                 {a.campagne.libelle}

@@ -10,7 +10,8 @@ import type { UtilisateurConnecte } from '../auth/auth.types.js';
 import { DossiersService } from '../dossiers/dossiers.service.js';
 import { ActionAudit } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { EXIGENCES, type CodePiece } from '../referentiel/pieces.js';
+import { ParametresService } from '../parametres/parametres.service.js';
+import type { CodePiece } from '../referentiel/pieces.js';
 import { StockageService } from '../stockage/stockage.service.js';
 import {
   ErreurPreparation,
@@ -25,6 +26,7 @@ export class PiecesService {
     private readonly audit: AuditService,
     private readonly stockage: StockageService,
     private readonly dossiers: DossiersService,
+    private readonly parametres: ParametresService,
   ) {}
 
   /**
@@ -46,7 +48,7 @@ export class PiecesService {
     if (u) this.dossiers.verifierModifiable(u, dossier);
     else this.dossiers.verifierModifiableParMilitaire(dossier);
 
-    const exigences = EXIGENCES[dossier.campagne.pays];
+    const exigences = await this.parametres.exigences(dossier.campagne.pays);
     let prepare;
     try {
       prepare =

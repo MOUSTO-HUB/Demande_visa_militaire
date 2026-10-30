@@ -20,6 +20,8 @@ import {
   TypeMessage,
 } from '../generated/prisma/enums.js';
 import { MessagesService } from '../messages/messages.service.js';
+import { conformite } from '../parametres/exigences.regles.js';
+import { ParametresService } from '../parametres/parametres.service.js';
 import { MESSAGE_MRZ_ILLISIBLE } from '../mrz/mrz.controller.js';
 import { lireMrz } from '../mrz/mrz.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -107,6 +109,7 @@ export class DossiersService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly messages: MessagesService,
+    private readonly parametres: ParametresService,
   ) {}
 
   async lister(
@@ -208,9 +211,15 @@ export class DossiersService {
     await this.audit.journaliser(u, ActionAudit.CONSULTATION, 'Dossier', id);
     const { militaire, campagne, ...reste } = dossier;
     const { valeursCommunes: _, ...infosCampagne } = campagne;
+    const exigences = await this.parametres.exigences(campagne.pays);
     return {
       ...reste,
       donnees: undefined,
+      // Indicateur « conforme / non conforme » au site du pays (F5.3).
+      pieces: reste.pieces.map((p) => ({
+        ...p,
+        conformite: p.purgeeLe ? null : conformite(p, exigences),
+      })),
       militaire: {
         id: militaire.id,
         matricule: militaire.matricule,

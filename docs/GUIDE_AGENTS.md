@@ -36,6 +36,8 @@ Plateforme de préparation des demandes de visa d'études des militaires boursie
 ## 4. Administrateur (DGSIC)
 
 - Comptes : création (mot de passe provisoire affiché une seule fois), désactivation au départ d'un agent, « Nouveau mot de passe » en cas de perte (retire aussi la double authentification).
+- **Paramètres** : quand COVA ou kdmid change le format des photos ou des scans (pièce refusée par le site), saisir les nouvelles valeurs ; les pièces déjà déposées qui ne conviennent plus passent « non conformes » sur les dossiers.
+- **Alertes « Site COVA / kdmid »** : un site officiel a changé (nouveaux champs relevés) ; prévenir la gestion pour relier ces champs dans « Correspondances ».
 - Journal d'audit, sauvegardes, copie hors site, mises à jour, restauration : docs/DEPLOIEMENT.md.
 
 ## 5. Exercices de la formation (données fictives)

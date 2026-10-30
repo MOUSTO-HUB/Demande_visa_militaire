@@ -14,6 +14,7 @@ import { AccesController } from '../espace/acces.controller.js';
 import { EspaceController } from '../espace/espace.controller.js';
 import { MilitairesController } from '../militaires/militaires.controller.js';
 import { MrzController } from '../mrz/mrz.controller.js';
+import { ParametresController } from '../parametres/parametres.controller.js';
 import { PiecesController } from '../pieces/pieces.controller.js';
 import { ReferentielController } from '../referentiel/referentiel.controller.js';
 import { SitesController } from '../sites/sites.controller.js';
@@ -51,6 +52,7 @@ const CONTROLEURS = [
   EspaceController,
   MilitairesController,
   MrzController,
+  ParametresController,
   PiecesController,
   ReferentielController,
   SitesController,

@@ -4,6 +4,8 @@ import {
   DossiersService,
 } from '../dossiers/dossiers.service.js';
 import {
+  ModeCorrespondance,
+  PaysAccueil,
   StatutCampagne,
   StatutDossier,
   StatutMessage,
@@ -13,6 +15,9 @@ import { nombreBloquants } from '../referentiel/donnees.js';
 import { alertesDossier, type Alerte } from './alertes.regles.js';
 
 const NIVEAUX = { URGENT: 0, ATTENTION: 1 } as const;
+
+/** Alerte sur un site officiel, avec le lien vers ses correspondances. */
+type AlerteSite = Alerte & { lien: string };
 
 /** Tableau de bord par campagne (F7.1) et alertes (F7.3). */
 @Injectable()
@@ -143,6 +148,46 @@ export class SuiviService {
           campagne: { id: c.id, libelle: suivi.campagne.libelle },
         });
     }
-    return resultat.sort((x, y) => NIVEAUX[x.niveau] - NIVEAUX[y.niveau]);
+    return [...(await this.alertesSites()), ...resultat].sort(
+      (x, y) => NIVEAUX[x.niveau] - NIVEAUX[y.niveau],
+    );
+  }
+
+  /**
+   * Sites officiels modifiés (risques, section 12) : champs relevés pas encore
+   * reliés à une réponse du dossier, propositions à vérifier.
+   */
+  async alertesSites(): Promise<AlerteSite[]> {
+    const groupes = await this.prisma.champSite.groupBy({
+      by: ['pays', 'obligatoire', 'mode', 'propose'],
+      _count: { _all: true },
+    });
+    const alertes: AlerteSite[] = [];
+    for (const pays of Object.values(PaysAccueil)) {
+      const du = groupes.filter((g) => g.pays === pays);
+      const nonRelies = du
+        .filter((g) => g.obligatoire && g.mode === ModeCorrespondance.A_DEFINIR)
+        .reduce((n, g) => n + g._count._all, 0);
+      const propositions = du
+        .filter((g) => g.propose)
+        .reduce((n, g) => n + g._count._all, 0);
+      const lien = `/sites/${pays === PaysAccueil.CHINE ? 'chine' : 'russie'}`;
+      const site = pays === PaysAccueil.CHINE ? 'COVA' : 'kdmid';
+      if (nonRelies)
+        alertes.push({
+          type: 'SITE',
+          niveau: 'URGENT',
+          message: `Site ${site} : ${nonRelies} champ(s) obligatoire(s) relevé(s) mais pas encore relié(s) à une réponse du dossier.`,
+          lien,
+        });
+      if (propositions)
+        alertes.push({
+          type: 'SITE',
+          niveau: 'ATTENTION',
+          message: `Site ${site} : ${propositions} correspondance(s) proposée(s) automatiquement à vérifier.`,
+          lien,
+        });
+    }
+    return alertes;
   }
 }

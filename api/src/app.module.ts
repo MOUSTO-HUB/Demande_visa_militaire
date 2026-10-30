@@ -9,6 +9,7 @@ import { EspaceModule } from './espace/espace.module.js';
 import { MessagesModule } from './messages/messages.module.js';
 import { MilitairesModule } from './militaires/militaires.module.js';
 import { MrzModule } from './mrz/mrz.module.js';
+import { ParametresModule } from './parametres/parametres.module.js';
 import { PiecesModule } from './pieces/pieces.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ReferentielModule } from './referentiel/referentiel.module.js';
@@ -24,6 +25,7 @@ import { UtilisateursModule } from './utilisateurs/utilisateurs.module.js';
     PrismaModule,
     AuditModule,
     StockageModule,
+    ParametresModule,
     AuthModule,
     UtilisateursModule,
     ReferentielModule,

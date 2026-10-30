@@ -53,22 +53,30 @@ export interface DefinitionChamp {
   aide?: string;
 }
 
+/** Format exigé par un site officiel (réglable par l'ADMIN, « Paramètres »). */
+export interface Exigences {
+  photo: {
+    largeur: number;
+    hauteur: number;
+    poidsMinKo: number;
+    poidsMaxKo: number;
+  };
+  scan: { coteMax: number; poidsMaxKo: number; pdfAccepte: boolean };
+  /** Réglées par l'ADMIN (sinon : valeurs d'origine). */
+  personnalisees?: boolean;
+}
+
+/** Pièce conforme ou non au site du pays (F5.3). */
+export interface Conformite {
+  conforme: boolean;
+  raisons: string[];
+}
+
 export interface Referentiel {
   sections: { code: string; libelle: string }[];
   champs: DefinitionChamp[];
   pieces: { code: string; libelle: string; exigeePar: PaysAccueil[] }[];
-  exigences: Record<
-    PaysAccueil,
-    {
-      photo: {
-        largeur: number;
-        hauteur: number;
-        poidsMinKo: number;
-        poidsMaxKo: number;
-      };
-      scan: { coteMax: number; poidsMaxKo: number; pdfAccepte: boolean };
-    }
-  >;
+  exigences: Record<PaysAccueil, Exigences>;
   statuts: Record<StatutDossier, string>;
   moisValiditePasseport: number;
 }
@@ -170,6 +178,8 @@ export interface Piece {
   hauteur: number | null;
   purgeeLe: string | null;
   creeLe: string;
+  /** Null : pièce effacée. */
+  conformite?: Conformite | null;
 }
 
 export interface DossierDetail {
@@ -425,8 +435,10 @@ export interface Alerte {
   type: string;
   niveau: 'URGENT' | 'ATTENTION';
   message: string;
-  dossierId: string;
-  militaire: {
+  /** Absents pour une alerte sur un site officiel (lien vers ses correspondances). */
+  dossierId?: string;
+  lien?: string;
+  militaire?: {
     matricule: string;
     grade?: string | null;
     nom: string;
@@ -477,7 +489,14 @@ export interface FicheEspace {
     code: string;
     libelle: string;
     exigee: boolean;
-    deposee: { id: string; nomFichier: string; creeLe: string } | null;
+    deposee: {
+      id: string;
+      nomFichier: string;
+      creeLe: string;
+      conformite: Conformite;
+    } | null;
   }[];
+  /** Dimensions de la photo exigées par le site (cadre du recadrage). */
+  photo: { largeur: number; hauteur: number };
   reponsesObligatoiresManquantes: number;
 }

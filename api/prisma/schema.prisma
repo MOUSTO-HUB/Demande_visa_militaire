@@ -380,3 +380,17 @@ model Message {
   @@index([dossierId, creeLe])
   @@map("messages")
 }
+
+// ─── Paramètres ──────────────────────────────────────────────────────────────
+
+/// Exigences de format des pièces d'un site officiel, modifiées par l'ADMIN
+/// (cahier des charges, F8.2) ; sans ligne, celles de src/referentiel/pieces.ts.
+model ParametrePays {
+  pays       PaysAccueil @id
+  /// { photo: { largeur, hauteur, poidsMinKo, poidsMaxKo }, scan: { coteMax, poidsMaxKo, pdfAccepte } }
+  exigences  Json
+  modifieLe  DateTime    @updatedAt @map("modifie_le")
+  modifiePar String?     @map("modifie_par")
+
+  @@map("parametres_pays")
+}
